@@ -1,0 +1,4 @@
+opencv-python>=4.8
+# 0.10.21 todavia trae la API mp.solutions (versiones mas nuevas la eliminaron)
+mediapipe==0.10.21
+numpy
