@@ -1,10 +1,13 @@
-# Fruit Ninja con el flash del celular
+# Corte de Luz
 
 Obligatorio 2 de Programación 2.
 
-Juego de cortar frutas hecho en Python con OpenCV donde **la linterna del celular es la navaja**.
+Juego hecho en Python con **pygame** y **OpenCV** donde **la linterna del celular es la espada**.
 La cámara de la computadora busca el punto de luz más brillante de la imagen y lo sigue.
 Al mover el celular frente a la cámara, la luz deja un rastro, y las frutas que lo cruzan se cortan.
+Sin la cámara no se puede jugar: la luz es el único control para cortar.
+
+Repositorio: https://github.com/faaaaaacuu/obligatorio2-programacion2
 
 ## Instalación
 
@@ -20,24 +23,46 @@ En macOS, la primera vez el sistema pide permiso para usar la cámara
 ## Cómo se juega
 
 ```bash
-python3 friutninja.py
+python3 main.py
 ```
 
 1. Prender la linterna del celular y apuntarla hacia la cámara.
-2. En el menú tiene que aparecer **"Flash detectado"** en verde.
-3. Apretar **ESPACIO** para empezar y mover el celular como una espada.
+2. En el menú tiene que aparecer **"Linterna detectada"** en verde (y un círculo amarillo donde está la luz).
+3. Apretar **1** para jugar solo o **2** para el versus, y mover el celular como una espada.
 
 - Cada fruta cortada suma un punto.
 - Cortar una bomba resta una vida.
-- Dejar caer una fruta sin cortarla también resta una vida.
-- Si se terminan las vidas, se pierde la partida.
+- Dejar caer una fruta sin cortarla también resta una vida (las bombas se pueden dejar caer).
+- Para cortar hay que mover la luz: si se queda quieta encima de una fruta, no corta.
+- Al terminar, **ESPACIO** arranca otra partida del mismo modo sin cerrar la ventana
+  (o **1** / **2** para cambiar de modo).
+
+### Modo 1 jugador
+
+**Se gana** pasando los 5 niveles. **Se pierde** si se terminan las vidas.
+
+### Modo versus (2 jugadores)
+
+La pantalla se divide al medio: el **Jugador 1** juega en la mitad izquierda y el **Jugador 2**
+en la derecha, cada uno con la linterna de su celular. Cada mitad tiene sus propias frutas, vidas
+y puntos, y la cámara busca una luz distinta en cada mitad.
+
+- **Gana** el primero que corta 15 frutas.
+- Si un jugador se queda sin vidas, gana el otro.
+- Si pasan las dos cosas a la vez, es empate.
+
+Conviene que cada jugador se pare de su lado y no cruce la linterna a la mitad del otro.
+
+Si la cámara deja de ver una linterna, aparece el aviso "No veo la linterna" y, si pasa más de
+medio segundo, el juego se **pausa** hasta que la luz vuelva a aparecer (en el versus se pausa
+para los dos, así nadie pierde vidas por eso).
 
 Funciona mejor en un cuarto con poca luz y sin lámparas o ventanas detrás del jugador.
 
-## Niveles
+## Niveles (modo 1 jugador)
 
 Hay 5 niveles. En cada uno hay que cortar una cantidad de frutas para pasar al siguiente,
-y las vidas se recargan a 3 al empezar cada nivel. Si se pasa el nivel 5, se gana.
+y las vidas se recargan a 3 al empezar cada nivel.
 
 | Nivel | Frutas para pasar | Frutas a la vez | Velocidad  | Bombas |
 |-------|-------------------|-----------------|------------|--------|
@@ -48,30 +73,47 @@ y las vidas se recargan a 3 al empezar cada nivel. Si se pasa el nivel 5, se gan
 | 5     | 16                | 6               | muy rápida | 22 %   |
 
 En cada nivel las frutas también son un poco más chicas.
-Los niveles se configuran en la lista `NIVELES` al principio de `friutninja.py`.
+Los niveles se configuran en la lista `NIVELES` de `ajustes.py`, y las reglas del versus en `REGLAS_VERSUS`.
 
 ## Controles
 
-| Tecla    | Acción                                                        |
-|----------|---------------------------------------------------------------|
-| ESPACIO  | Empezar / volver a jugar                                      |
-| + / -    | Subir / bajar el umbral de brillo de la detección             |
-| M        | Mostrar / ocultar lo que la cámara está tomando como "luz"    |
-| Q o ESC  | Salir                                                         |
+| Tecla           | Acción                                                     |
+|-----------------|------------------------------------------------------------|
+| 1               | Empezar en modo 1 jugador                                  |
+| 2               | Empezar en modo versus                                     |
+| ESPACIO         | Volver a jugar el mismo modo                               |
+| + / -           | Subir / bajar el umbral de brillo de la detección          |
+| M               | Mostrar / ocultar lo que la cámara está tomando como "luz" |
+| ESC o la X      | Salir                                                      |
 
 Si el juego detecta otras cosas como si fueran la linterna (lámparas, ventanas, la pantalla),
 hay que subir el umbral con **+**. Si no detecta la linterna, hay que bajarlo con **-**.
-La tecla **M** ayuda a ver qué está detectando.
+La tecla **M** muestra un recuadro abajo a la derecha con lo que se está detectando.
+
+## Archivos
+
+| Archivo              | Qué tiene                                                                 |
+|----------------------|---------------------------------------------------------------------------|
+| `main.py`            | El bucle principal (eventos, actualizar, dibujar, `reloj.tick`) y los estados del juego |
+| `vision.py`          | Todo lo de OpenCV: abrir la cámara, leer el cuadro y detectar la luz      |
+| `objetos.py`         | Las clases `Fruta`, `Pedazo` y `Jugador` (frutas, rastro, vidas y puntos de cada jugador) |
+| `ajustes.py`         | Constantes: colores, tamaños, velocidades, niveles y rangos de detección |
+| `sonidos/`           | Efectos de sonido (corte, bomba, caída, nivel, ganar, perder)             |
+| `generar_sonidos.py` | Script que generó los `.wav` (no hace falta correrlo para jugar)          |
 
 ## Cómo funciona la detección
 
-En cada cuadro de la cámara:
+En cada cuadro de la cámara (`vision.py`):
 
-1. La imagen se espeja (para que moverse a la derecha sea ir a la derecha en pantalla).
+1. La imagen se espeja con `cv2.flip` (para que moverse a la derecha sea ir a la derecha en pantalla).
 2. Se pasa a escala de grises y se desenfoca un poco para sacar ruido.
 3. Se quedan solo los píxeles más brillantes que el umbral (`cv2.threshold`).
-4. Se busca la mancha blanca más grande (`cv2.findContours`) y su centro es la posición de la navaja.
+4. Se busca la mancha blanca más grande (`cv2.findContours`) y se devuelve su centro `(x, y)`.
+   Si no hay ninguna mancha suficientemente grande, se devuelve `None`.
 
-Para saber si una fruta se cortó, se calcula la distancia entre el centro de la fruta
-y el segmento que recorrió la luz desde el cuadro anterior. Si esa distancia es menor que el
-radio de la fruta, la fruta queda cortada.
+`detectar_luz` recibe además la zona donde buscar (`x_min`, `x_max`). Jugando solo busca en toda
+la pantalla; en el versus se llama una vez por jugador, cada una con su mitad.
+
+El resto del juego solo usa ese resultado. Para saber si una fruta se cortó, se calcula la
+distancia entre el centro de la fruta y el segmento que recorrió la luz desde el cuadro anterior.
+Si esa distancia es menor que el radio de la fruta, la fruta queda cortada.
