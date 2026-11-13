@@ -25,7 +25,14 @@ UMBRAL_BRILLO = 235        # 0-255: que tan brillante tiene que ser un pixel par
 AREA_MINIMA_FLASH = 30     # area minima (pixeles) de la mancha de luz, para ignorar reflejos chicos
 VIDAS_INICIALES = 3
 DURACION_PARTIDA = 60
-MAX_FRUTAS = 12
+MAX_FRUTAS = 4             # cuantas frutas puede haber en pantalla a la vez
+RADIO_MIN = 55             # tamano de las frutas (radio en pixeles)
+RADIO_MAX = 80
+ESPERA_MIN = 1.2           # segundos entre una fruta nueva y la siguiente
+ESPERA_MAX = 2.0
+GRAVEDAD = 500             # mas bajo = suben y caen mas lento
+ALTURA_MIN = 0.65          # hasta donde suben, como fraccion del alto de la pantalla
+ALTURA_MAX = 0.85          # (0.85 = llegan casi arriba de todo)
 COLORES_FRUTAS = [
     (40, 180, 255),   # naranja
     (60, 220, 60),    # manzana verde
@@ -62,18 +69,23 @@ def distancia_punto_segmento(punto, inicio, fin):
 
 
 class Fruta:
-    def __init__(self, x, y, radio, color, bomba=False):
+    def __init__(self, x, y, radio, color, w, h, bomba=False):
         self.x, self.y = float(x), float(y)
         self.radio = radio
         self.color = color
         self.bomba = bomba
-        self.vx = random.uniform(-180, 180)
-        self.vy = random.uniform(-760, -560)
+        # Elijo hasta que altura sube y calculo la velocidad justa para llegar ahi
+        # (v = raiz(2 * g * altura)). Despues la gravedad la hace caer.
+        punto_mas_alto = h * (1 - random.uniform(ALTURA_MIN, ALTURA_MAX))
+        subida = self.y - punto_mas_alto
+        self.vy = -math.sqrt(2 * GRAVEDAD * subida)
+        # Se mueve un poco de costado, siempre hacia el centro para no salirse.
+        self.vx = random.uniform(20, 90) * (1 if self.x < w / 2 else -1)
         self.giro = random.uniform(0, math.tau)
         self.cortada = False
 
     def actualizar(self, dt):
-        self.vy += 980 * dt
+        self.vy += GRAVEDAD * dt
         self.x += self.vx * dt
         self.y += self.vy * dt
         self.giro += dt * 5
@@ -83,12 +95,13 @@ class Fruta:
         if self.bomba:
             cv2.circle(imagen, centro, self.radio, (25, 25, 25), -1)
             cv2.circle(imagen, centro, self.radio, BLANCO, 2)
-            cv2.line(imagen, (centro[0] - 12, centro[1] - 12),
-                     (centro[0] + 12, centro[1] + 12), ROJO, 4)
-            cv2.line(imagen, (centro[0] + 12, centro[1] - 12),
-                     (centro[0] - 12, centro[1] + 12), ROJO, 4)
+            cruz = self.radio // 3
+            cv2.line(imagen, (centro[0] - cruz, centro[1] - cruz),
+                     (centro[0] + cruz, centro[1] + cruz), ROJO, 6)
+            cv2.line(imagen, (centro[0] + cruz, centro[1] - cruz),
+                     (centro[0] - cruz, centro[1] + cruz), ROJO, 6)
             cv2.line(imagen, (centro[0] + 10, centro[1] - self.radio + 4),
-                     (centro[0] + 20, centro[1] - self.radio - 12), AMARILLO, 4)
+                     (centro[0] + 25, centro[1] - self.radio - 18), AMARILLO, 5)
             return
 
         cv2.circle(imagen, centro, self.radio, self.color, -1)
@@ -100,12 +113,13 @@ class Fruta:
 
 
 def crear_fruta(w, h):
-    radio = random.randint(25, 42)
+    radio = random.randint(RADIO_MIN, RADIO_MAX)
     return Fruta(
-        random.randint(radio + 10, w - radio - 10),
+        random.randint(int(w * 0.15), int(w * 0.85)),
         h + radio,
         radio,
         random.choice(COLORES_FRUTAS),
+        w, h,
         bomba=random.random() < 0.14,
     )
 
@@ -151,6 +165,7 @@ def main():
     vidas = VIDAS_INICIALES
     inicio = 0.0
     ultimo_spawn = 0.0
+    espera = 0.5               # la primera fruta sale enseguida
     mensaje = ""
     mensaje_hasta = 0.0
 
@@ -168,9 +183,10 @@ def main():
             dedos = [flash] if flash is not None else []
 
             if estado == "jugando":
-                if ahora - ultimo_spawn > random.uniform(0.35, 0.75) and len(frutas) < MAX_FRUTAS:
+                if ahora - ultimo_spawn > espera and len(frutas) < MAX_FRUTAS:
                     frutas.append(crear_fruta(w, h))
                     ultimo_spawn = ahora
+                    espera = random.uniform(ESPERA_MIN, ESPERA_MAX)
                 for fruta in frutas:
                     fruta.actualizar(1 / 60)
 
@@ -275,6 +291,7 @@ def main():
                 puntuacion = 0
                 vidas = VIDAS_INICIALES
                 inicio = ultimo_spawn = time.time()
+                espera = 0.5
             if cv2.getWindowProperty(VENTANA, cv2.WND_PROP_VISIBLE) < 1:
                 break
     finally:
