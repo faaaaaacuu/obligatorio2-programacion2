@@ -1,11 +1,14 @@
-"""Fruit Ninja controlado con las manos usando OpenCV y MediaPipe.
+"""Fruit Ninja controlado con el flash (linterna) del celular usando OpenCV.
 
 Controles:
   ESPACIO  empezar / volver a jugar
+  + / -    subir / bajar el umbral de brillo (si detecta cosas de mas o de menos)
+  M        mostrar / ocultar lo que la camara ve como "luz"
   Q / ESC  salir
 
-Mueve la punta del dedo indice como una espada. Cada fruta que cruza el
-rastro del dedo suma puntos; las bombas quitan una vida.
+Prende la linterna del celular, apuntala a la camara y movela como una
+espada. Cada fruta que cruza el rastro de la luz suma puntos; las bombas
+quitan una vida.
 """
 
 import math
@@ -13,12 +16,13 @@ import random
 import time
 
 import cv2
-import mediapipe as mp
 import numpy as np
 
 
-VENTANA = "FRUIT NINJA - MANOS"
+VENTANA = "FRUIT NINJA - FLASH"
 INDICE_CAMARA = 0
+UMBRAL_BRILLO = 235        # 0-255: que tan brillante tiene que ser un pixel para contar como flash
+AREA_MINIMA_FLASH = 30     # area minima (pixeles) de la mancha de luz, para ignorar reflejos chicos
 VIDAS_INICIALES = 3
 DURACION_PARTIDA = 60
 MAX_FRUTAS = 12
@@ -33,9 +37,6 @@ BLANCO = (255, 255, 255)
 ROJO = (40, 40, 230)
 VERDE = (50, 220, 70)
 AMARILLO = (0, 220, 255)
-
-mp_hands = mp.solutions.hands
-mp_draw = mp.solutions.drawing_utils
 
 
 def texto(img, mensaje, posicion, escala=0.8, color=BLANCO, grosor=2, centrado=False):
@@ -109,14 +110,27 @@ def crear_fruta(w, h):
     )
 
 
-def detectar_dedos(resultado, imagen, w, h):
-    puntos = []
-    if resultado.multi_hand_landmarks:
-        for landmarks in resultado.multi_hand_landmarks:
-            mp_draw.draw_landmarks(imagen, landmarks, mp_hands.HAND_CONNECTIONS)
-            dedo = landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
-            puntos.append((int(dedo.x * w), int(dedo.y * h)))
-    return puntos
+def detectar_flash(imagen, umbral):
+    """Busca la mancha de luz mas grande (el flash del celular).
+    Devuelve (punto, mascara): punto es (x, y) o None si no hay luz."""
+    gris = cv2.cvtColor(imagen, cv2.COLOR_BGR2GRAY)
+    gris = cv2.GaussianBlur(gris, (11, 11), 0)
+    _, mascara = cv2.threshold(gris, umbral, 255, cv2.THRESH_BINARY)
+    # erosionar y dilatar borra puntitos sueltos (reflejos chicos)
+    mascara = cv2.erode(mascara, None, iterations=1)
+    mascara = cv2.dilate(mascara, None, iterations=2)
+
+    contornos, _ = cv2.findContours(mascara, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contornos:
+        return None, mascara
+    mayor = max(contornos, key=cv2.contourArea)
+    if cv2.contourArea(mayor) < AREA_MINIMA_FLASH:
+        return None, mascara
+    momentos = cv2.moments(mayor)
+    if momentos["m00"] == 0:
+        return None, mascara
+    centro = (int(momentos["m10"] / momentos["m00"]), int(momentos["m01"] / momentos["m00"]))
+    return centro, mascara
 
 
 def main():
@@ -127,12 +141,8 @@ def main():
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
     cv2.namedWindow(VENTANA, cv2.WINDOW_NORMAL)
 
-    manos = mp_hands.Hands(
-        static_image_mode=False,
-        max_num_hands=2,
-        min_detection_confidence=0.65,
-        min_tracking_confidence=0.55,
-    )
+    umbral = UMBRAL_BRILLO
+    ver_mascara = False
     estado = "menu"
     frutas = []
     rastro = []
@@ -152,9 +162,10 @@ def main():
             frame = cv2.flip(frame, 1)
             h, w = frame.shape[:2]
             ahora = time.time()
-            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            resultado = manos.process(rgb)
-            dedos = detectar_dedos(resultado, frame, w, h)
+            flash, mascara = detectar_flash(frame, umbral)
+            # Misma forma que antes (lista de puntos) para no cambiar la logica del corte.
+            # Si se pierde la luz, la lista queda vacia y el rastro no salta de un lado a otro.
+            dedos = [flash] if flash is not None else []
 
             if estado == "jugando":
                 if ahora - ultimo_spawn > random.uniform(0.35, 0.75) and len(frutas) < MAX_FRUTAS:
@@ -210,16 +221,20 @@ def main():
             for a, b in zip(rastro, rastro[1:]):
                 cv2.line(frame, a, b, (255, 255, 255), 5, cv2.LINE_AA)
             for dedo in dedos:
-                cv2.circle(frame, dedo, 12, AMARILLO, -1)
+                cv2.circle(frame, dedo, 14, AMARILLO, 3)
 
             if estado == "menu":
                 overlay = frame.copy()
                 cv2.rectangle(overlay, (0, 0), (w, h), (10, 10, 35), -1)
                 frame = cv2.addWeighted(overlay, 0.72, frame, 0.28, 0)
                 texto(frame, "FRUIT NINJA", (w // 2, h // 2 - 110), 2.4, AMARILLO, 5, True)
-                texto(frame, "Corta las frutas moviendo el dedo indice", (w // 2, h // 2 - 25), 0.95, BLANCO, 2, True)
+                texto(frame, "Prende la linterna del celular y corta con la luz", (w // 2, h // 2 - 25), 0.95, BLANCO, 2, True)
                 texto(frame, "Evita las bombas y no dejes caer frutas", (w // 2, h // 2 + 25), 0.8, BLANCO, 2, True)
+                texto(frame, "Flash detectado" if flash else "No veo el flash",
+                      (w // 2, h // 2 + 65), 0.8, VERDE if flash else ROJO, 2, True)
                 texto(frame, "ESPACIO para empezar  |  Q para salir", (w // 2, h // 2 + 105), 0.9, VERDE, 2, True)
+                texto(frame, f"Umbral de brillo: {umbral}  (+/- para ajustar, M para ver la luz)",
+                      (w // 2, h // 2 + 150), 0.65, BLANCO, 1, True)
             elif estado == "jugando":
                 texto(frame, f"Puntos: {puntuacion}", (25, 45), 1.0, BLANCO, 2)
                 texto(frame, f"Vidas: {'♥ ' * max(vidas, 0)}", (25, 85), 0.8, ROJO, 2)
@@ -237,10 +252,21 @@ def main():
                 texto(frame, "ESPACIO para revancha  |  Q para salir",
                       (w // 2, h // 2 + 85), 0.9, VERDE, 2, True)
 
+            if ver_mascara:
+                # Recuadro arriba a la derecha con lo que la camara toma como "luz"
+                chica = cv2.resize(mascara, (w // 4, h // 4))
+                frame[10:10 + h // 4, w - 10 - w // 4:w - 10] = cv2.cvtColor(chica, cv2.COLOR_GRAY2BGR)
+
             cv2.imshow(VENTANA, frame)
             tecla = cv2.waitKey(1) & 0xFF
             if tecla in (ord("q"), 27):
                 break
+            if tecla in (ord("+"), ord("=")):
+                umbral = min(254, umbral + 5)
+            if tecla in (ord("-"), ord("_")):
+                umbral = max(150, umbral - 5)
+            if tecla == ord("m"):
+                ver_mascara = not ver_mascara
             if tecla == ord(" ") and estado in ("menu", "fin"):
                 estado = "jugando"
                 frutas = []
@@ -252,7 +278,6 @@ def main():
             if cv2.getWindowProperty(VENTANA, cv2.WND_PROP_VISIBLE) < 1:
                 break
     finally:
-        manos.close()
         cap.release()
         cv2.destroyAllWindows()
 
