@@ -39,7 +39,7 @@ from ajustes import *
 from objetos import Fruta, Jugador
 
 CARPETA = os.path.dirname(os.path.abspath(__file__))
-NOMBRES_SONIDOS = ("corte", "bomba", "caida", "nivel", "ganar", "perder", "lanzar", "mortal")
+NOMBRES_SONIDOS = ("corte", "bomba", "caida", "nivel", "ganar", "perder", "lanzar", "mortal", "vida")
 MITAD = ANCHO // 2
 # En el menú todavía no hay modo elegido: se busca una luz en cada mitad.
 ZONAS_MENU = [(0, MITAD), (MITAD, ANCHO)]

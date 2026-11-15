@@ -74,6 +74,8 @@ VIDAS = 3                  # para toda la partida
 DURACION_CARTEL = 3        # segundos de cuenta regresiva antes de empezar
 DURACION_MENSAJE = 0.6     # segundos que se ve un mensaje como "+1" o "BOMBA!"
 DURACION_DESTELLO = 0.25   # segundos que la pantalla queda roja al cortar una bomba
+FRUTAS_PARA_VIDA = 3       # frutas cortadas en un solo trazo para ganar una vida (si tenés menos de 3)
+GIRO_MAXIMO_TRAZO = 90     # grados: si la luz dobla más que esto de golpe, empieza otro trazo
 
 # --- Frutas ---
 ALTURA_MINIMA = 0.65       # hasta dónde suben las frutas, como fracción del alto de la pantalla

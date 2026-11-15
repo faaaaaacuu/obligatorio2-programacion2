@@ -16,7 +16,8 @@ from ajustes import (ALTO, ALTURA_MINIMA, ALTURA_MAXIMA, VELOCIDAD_LATERAL,
                      GIRO_MAXIMO_POR_PASO, RADIO_BOLA, RADIO_BOMBA_MORTAL,
                      GRAVEDAD_BOMBA_MORTAL, VIDAS_AL_TIRAR_BOMBA, COLOR_BOMBA_MORTAL,
                      GOTAS_POR_CORTE, CHISPAS_POR_BOMBA, GRAVEDAD_PARTICULAS,
-                     BLANCO, NEGRO, ROJO)
+                     FRUTAS_PARA_VIDA, GIRO_MAXIMO_TRAZO,
+                     BLANCO, NEGRO, ROJO, VERDE)
 
 COLORES_EXPLOSION = [(255, 140, 30), (255, 220, 60), (255, 255, 255), (90, 90, 90)]
 COLORES_EXPLOSION_MORTAL = [COLOR_BOMBA_MORTAL, (230, 160, 255), (255, 255, 255)]
@@ -309,6 +310,8 @@ class Jugador:
         self.centro_carga = None
         self.luz = None             # posición de la luz en este cuadro, o None
         self.luz_anterior = None
+        self.frutas_en_trazo = 0    # frutas cortadas en el trazo actual (para el combo)
+        self.direccion_trazo = None
         self.cortadas = 0
         self.vidas = VIDAS
         self.espera = 0.5           # la primera fruta sale enseguida
@@ -352,12 +355,39 @@ class Jugador:
             movimiento = abs(luz[0] - self.luz_anterior[0]) + abs(luz[1] - self.luz_anterior[1])
             if movimiento >= MOVIMIENTO_MINIMO:
                 segmento = (self.luz_anterior, luz)
+        self.seguir_trazo(segmento)
         self.luz_anterior = luz
         self.rastro.append(luz)
         self.rastro = self.rastro[-LARGO_RASTRO:]
         self.camino.append(luz)
         self.camino = self.camino[-VENTANA_CIRCULO:]
         return segmento
+
+    def seguir_trazo(self, segmento):
+        """Lleva la cuenta del trazo actual: un movimiento seguido de la luz.
+        Si la luz se frena, se pierde o dobla de golpe (por ejemplo, va y vuelve),
+        termina el trazo y la cuenta de frutas vuelve a cero."""
+        if segmento is None:
+            self.frutas_en_trazo = 0
+            self.direccion_trazo = None
+            return
+        (ax, ay), (bx, by) = segmento
+        direccion = math.atan2(by - ay, bx - ax)
+        if self.direccion_trazo is not None:
+            cambio = abs(direccion - self.direccion_trazo) % (2 * math.pi)
+            cambio = min(cambio, 2 * math.pi - cambio)     # el ángulo más corto entre las dos
+            if cambio > math.radians(GIRO_MAXIMO_TRAZO):
+                self.frutas_en_trazo = 0
+        self.direccion_trazo = direccion
+
+    def premiar_combo(self, sonidos):
+        """Cortó FRUTAS_PARA_VIDA frutas en un solo trazo: si le faltan vidas, gana una."""
+        if 0 < self.vidas < VIDAS:
+            self.vidas += 1
+            self.mostrar_mensaje("¡TRIPLE! +1 VIDA", VERDE, DURACION_MENSAJE * 2.5)
+            sonidos["vida"].play()
+        else:
+            self.mostrar_mensaje("¡TRIPLE!", VERDE, DURACION_MENSAJE * 2)
 
     def cargar_bomba(self):
         """Si el jugador gira la linterna en círculos, se va cargando la bola.
@@ -423,6 +453,9 @@ class Jugador:
                     self.pedazos.extend(fruta.partir(*segmento))
                     self.textos.append(TextoFlotante(fruta.x, fruta.y - fruta.radio, "+1", self.color))
                     sonidos["corte"].play()
+                    self.frutas_en_trazo += 1
+                    if self.frutas_en_trazo == FRUTAS_PARA_VIDA:
+                        self.premiar_combo(sonidos)
             elif fruta.se_cayo():
                 if not fruta.bomba:     # dejar caer una bomba está bien
                     self.vidas -= 1

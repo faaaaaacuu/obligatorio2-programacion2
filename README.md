@@ -38,6 +38,9 @@ y con **F** de nuevo se vuelve a pantalla completa. Se puede cambiar en `ajustes
 - Dejar caer una fruta sin cortarla también resta una vida (las bombas se pueden dejar caer).
 - Para cortar hay que mover la luz: si se queda quieta encima de una fruta, no corta.
 - Hay **3 vidas** para toda la partida.
+- **Triple:** si en **un solo trazo** cortás 3 frutas y tenés menos de 3 vidas, ganás una vida.
+  Un trazo es un movimiento seguido de la luz: si la luz se frena, se pierde o va y vuelve,
+  empieza otro trazo. Funciona en los dos modos.
 - Al terminar, **ESPACIO** arranca otra partida del mismo modo sin cerrar la ventana
   (o **1** / **2** para cambiar de modo).
 
