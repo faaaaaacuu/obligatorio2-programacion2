@@ -26,6 +26,9 @@ En macOS, la primera vez el sistema pide permiso para usar la cámara
 python3 main.py
 ```
 
+El juego arranca en **pantalla completa**. Con **F** se pasa a ventana (y se puede cerrar con la X)
+y con **F** de nuevo se vuelve a pantalla completa. Se puede cambiar en `ajustes.py` (`PANTALLA_COMPLETA`).
+
 1. Prender la linterna del celular y apuntarla hacia la cámara.
 2. En el menú tiene que aparecer **"Linterna detectada"** en verde (y un círculo amarillo donde está la luz).
 3. Apretar **1** para jugar solo o **2** para el versus, y mover el celular como una espada.
@@ -44,8 +47,20 @@ python3 main.py
 ### Modo versus (2 jugadores)
 
 La pantalla se divide al medio: el **Jugador 1** juega en la mitad izquierda y el **Jugador 2**
-en la derecha, cada uno con la linterna de su celular. Cada mitad tiene sus propias frutas, vidas
-y puntos, y la cámara busca una luz distinta en cada mitad.
+en la derecha, cada uno con la linterna de su celular. Cada mitad tiene sus propias vidas y
+puntos, y la cámara busca una luz distinta en cada mitad.
+
+Cada jugador tiene **sus propias frutas**:
+
+| Jugador 1 (rastro celeste) | Jugador 2 (rastro naranja) |
+|----------------------------|----------------------------|
+| manzana, naranja, sandía   | uva, kiwi, limón           |
+
+**Bomba mortal:** si un jugador **gira la linterna en círculos** (más o menos una vuelta por
+segundo), en el medio del círculo se va formando una bola violeta. Al completar una vuelta y media
+la bola se convierte en una bomba mortal que aparece en la mitad del rival. Si el rival la corta,
+**se queda sin vidas y pierde en el acto**. Cada jugador la puede usar **una sola vez** por partida,
+y tirarla **te deja con 1 vida**. Si el rival la esquiva, la partida sigue.
 
 - **Gana** el primero que corta 15 frutas.
 - Si un jugador se queda sin vidas, gana el otro.
@@ -84,6 +99,7 @@ Los niveles se configuran en la lista `NIVELES` de `ajustes.py`, y las reglas de
 | ESPACIO         | Volver a jugar el mismo modo                               |
 | + / -           | Subir / bajar el umbral de brillo de la detección          |
 | M               | Mostrar / ocultar lo que la cámara está tomando como "luz" |
+| F               | Pantalla completa / ventana                                |
 | ESC o la X      | Salir                                                      |
 
 Si el juego detecta otras cosas como si fueran la linterna (lámparas, ventanas, la pantalla),
@@ -96,9 +112,9 @@ La tecla **M** muestra un recuadro abajo a la derecha con lo que se está detect
 |----------------------|---------------------------------------------------------------------------|
 | `main.py`            | El bucle principal (eventos, actualizar, dibujar, `reloj.tick`) y los estados del juego |
 | `vision.py`          | Todo lo de OpenCV: abrir la cámara, leer el cuadro y detectar la luz      |
-| `objetos.py`         | Las clases `Fruta`, `Pedazo` y `Jugador` (frutas, rastro, vidas y puntos de cada jugador) |
-| `ajustes.py`         | Constantes: colores, tamaños, velocidades, niveles y rangos de detección |
-| `sonidos/`           | Efectos de sonido (corte, bomba, caída, nivel, ganar, perder)             |
+| `objetos.py`         | Las clases `Fruta`, `BombaMortal`, `Pedazo` y `Jugador` (frutas, rastro, vidas y puntos de cada jugador) |
+| `ajustes.py`         | Constantes: colores, frutas de cada jugador, tamaños, velocidades, niveles y rangos de detección |
+| `sonidos/`           | Efectos de sonido (corte, bomba, caída, nivel, ganar, perder, lanzar y bomba mortal) |
 | `generar_sonidos.py` | Script que generó los `.wav` (no hace falta correrlo para jugar)          |
 
 ## Cómo funciona la detección
@@ -117,3 +133,11 @@ la pantalla; en el versus se llama una vez por jugador, cada una con su mitad.
 El resto del juego solo usa ese resultado. Para saber si una fruta se cortó, se calcula la
 distancia entre el centro de la fruta y el segmento que recorrió la luz desde el cuadro anterior.
 Si esa distancia es menor que el radio de la fruta, la fruta queda cortada.
+
+### Cómo se detecta el círculo
+
+`contar_vueltas` (en `objetos.py`) mira las últimas posiciones de la luz y la **dirección** en la que
+se mueve de un cuadro al siguiente. Al dibujar un círculo, esa dirección dobla un poco cada vez y
+siempre para el mismo lado: después de una vuelta dobló 360°. Al cortar, en cambio, la luz va y
+vuelve, y eso es un giro brusco (más de 60° de golpe) que vuelve la cuenta a cero. Así un corte
+normal no carga la bomba sin querer.

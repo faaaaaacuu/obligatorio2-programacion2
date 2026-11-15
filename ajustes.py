@@ -8,6 +8,7 @@ ANCHO = 960
 ALTO = 540
 FPS = 30
 TITULO = "Corte de Luz"
+PANTALLA_COMPLETA = True   # el juego se agranda a toda la pantalla (tecla F para cambiar)
 
 # --- Cámara y detección de la linterna ---
 INDICE_CAMARA = 0
@@ -28,18 +29,28 @@ AMARILLO = (255, 220, 0)
 VERDE = (70, 220, 50)
 ROJO = (230, 40, 40)
 GRIS_OSCURO = (25, 25, 25)
+GRIS = (150, 150, 160)
 VERDE_HOJA = (30, 130, 30)
 COLOR_RASTRO = (190, 240, 255)       # rastro de la luz en el modo de 1 jugador
 COLOR_JUGADOR_1 = (80, 200, 255)     # celeste (versus, mitad izquierda)
 COLOR_JUGADOR_2 = (255, 140, 40)     # naranja (versus, mitad derecha)
 CAPA_OSCURA = (10, 10, 35, 150)      # capa semitransparente sobre la cámara
 CAPA_CARTEL = (10, 10, 35, 210)      # más oscura, para los carteles
-COLORES_FRUTAS = [
-    (255, 150, 30),   # naranja
-    (60, 220, 60),    # manzana verde
-    (200, 70, 210),   # ciruela
-    (230, 40, 50),    # manzana roja
-    (250, 220, 40),   # limón
+COLOR_BOMBA_MORTAL = (180, 70, 255)  # violeta
+
+# Cada jugador tiene sus propias frutas, así en el versus se distinguen de un vistazo.
+#   tipo:  cómo se dibuja
+#   color: color de la cáscara
+#   pulpa: color de adentro (se ve al cortarla)
+FRUTAS_JUGADOR_1 = [
+    {"tipo": "manzana", "color": (220, 30, 40),  "pulpa": (255, 245, 200)},
+    {"tipo": "naranja", "color": (255, 140, 0),  "pulpa": (255, 195, 90)},
+    {"tipo": "sandia",  "color": (40, 150, 50),  "pulpa": (240, 60, 80)},
+]
+FRUTAS_JUGADOR_2 = [
+    {"tipo": "uva",     "color": (130, 50, 170), "pulpa": (200, 230, 150)},
+    {"tipo": "kiwi",    "color": (140, 100, 50), "pulpa": (120, 200, 60)},
+    {"tipo": "limon",   "color": (250, 230, 40), "pulpa": (255, 250, 180)},
 ]
 
 # --- Partida ---
@@ -76,6 +87,19 @@ NIVELES = [
     {"meta": 14, "max_frutas": 5, "radio": (34, 49), "espera": (0.8, 1.3), "gravedad": 270, "bombas": 0.18},
     {"meta": 16, "max_frutas": 6, "radio": (30, 44), "espera": (0.6, 1.1), "gravedad": 360, "bombas": 0.22},
 ]
+
+# --- Bomba mortal (solo en el versus) ---
+# Girando la linterna en círculos se carga una bola; al completarla se convierte
+# en una bomba que aparece en la mitad del rival. Si el rival la corta, pierde.
+# Se puede usar una sola vez por partida y el que la tira queda con 1 vida.
+VENTANA_CIRCULO = 60       # cuántas posiciones recientes de la luz se miran (unos 2 segundos)
+VUELTAS_PARA_BOMBA = 1.5   # vueltas seguidas que hay que dar para completar la bola
+MOVIMIENTO_MINIMO_GIRO = 5 # píxeles: movimientos más chicos no cuentan (temblor de la mano)
+GIRO_MAXIMO_POR_PASO = 60  # grados: si la luz dobla más de golpe es un corte, no un círculo
+RADIO_BOLA = 40            # tamaño de la bola cuando está completa
+RADIO_BOMBA_MORTAL = 48
+GRAVEDAD_BOMBA_MORTAL = 160  # cae despacio, así molesta un buen rato
+VIDAS_AL_TIRAR_BOMBA = 1
 
 # Versus (2 jugadores, pantalla dividida): cada uno corta en su mitad.
 # Gana el primero que llega a la meta, o el que sobrevive si el otro se queda sin vidas.

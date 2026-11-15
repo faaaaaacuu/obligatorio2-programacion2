@@ -6,14 +6,17 @@ las frutas que se caen sin cortar quitan una vida.
 
 Modos:
   1 jugador: 5 niveles, cada uno más difícil.
-  Versus:    pantalla dividida, cada jugador con su linterna en su mitad.
-             Gana el primero en llegar a la meta o el que sobrevive.
+  Versus:    pantalla dividida, cada jugador con su linterna y sus frutas en su
+             mitad. Gana el primero en llegar a la meta o el que sobrevive.
+             Girando la linterna en círculos se carga una bomba mortal que
+             aparece en la mitad del rival (una vez por partida, te deja con 1 vida).
 
 Controles:
   1 / 2    empezar 1 jugador / versus
   ESPACIO  empezar / volver a jugar el mismo modo
   + / -    subir / bajar el umbral de brillo de la detección
   M        mostrar / ocultar lo que la cámara toma como "luz"
+  F        pantalla completa / ventana
   ESC      salir (también se puede cerrar con la X de la ventana)
 """
 
@@ -26,7 +29,7 @@ from ajustes import *
 from objetos import Jugador
 
 CARPETA = os.path.dirname(os.path.abspath(__file__))
-NOMBRES_SONIDOS = ("corte", "bomba", "caida", "nivel", "ganar", "perder")
+NOMBRES_SONIDOS = ("corte", "bomba", "caida", "nivel", "ganar", "perder", "lanzar", "mortal")
 MITAD = ANCHO // 2
 # En el menú todavía no hay modo elegido: se busca una luz en cada mitad.
 ZONAS_MENU = [(0, MITAD), (MITAD, ANCHO)]
@@ -69,10 +72,12 @@ def crear_capa(color):
 def nueva_partida(modo):
     """Devuelve el estado inicial de una partida. modo 1 = un jugador, 2 = versus."""
     if modo == 1:
-        jugadores = [Jugador("Jugador", COLOR_RASTRO, 0, ANCHO)]
+        jugadores = [Jugador("Jugador", COLOR_RASTRO, 0, ANCHO,
+                             FRUTAS_JUGADOR_1 + FRUTAS_JUGADOR_2)]
     else:
-        jugadores = [Jugador("Jugador 1", COLOR_JUGADOR_1, 0, MITAD),
-                     Jugador("Jugador 2", COLOR_JUGADOR_2, MITAD, ANCHO)]
+        # cada uno con sus frutas y con su bomba mortal
+        jugadores = [Jugador("Jugador 1", COLOR_JUGADOR_1, 0, MITAD, FRUTAS_JUGADOR_1, True),
+                     Jugador("Jugador 2", COLOR_JUGADOR_2, MITAD, ANCHO, FRUTAS_JUGADOR_2, True)]
     juego = {"modo": modo, "jugadores": jugadores, "resultado": ""}
     empezar_nivel(juego, 0)
     return juego
@@ -128,6 +133,12 @@ def actualizar_partida(juego, luces, dt, sonidos):
         jugador.actualizar(segmento, reglas, dt, sonidos)
 
     if juego["modo"] == 2:
+        # Bomba mortal: si uno completó la bola girando la linterna, le aparece al otro.
+        for jugador, rival in ((jugadores[0], jugadores[1]), (jugadores[1], jugadores[0])):
+            if jugador.cargar_bomba():
+                rival.recibir_bomba()
+                sonidos["lanzar"].play()
+
         resultado = resultado_versus(jugadores)
         if resultado is None:
             return "jugando"
@@ -201,12 +212,17 @@ def dibujar_hud(pantalla, juego, fuentes, destello):
             dibujar_texto(pantalla, f"Frutas: {jugador.cortadas}/{reglas['meta']}",
                           fuentes["chica"], BLANCO, (x, 52), False)
             dibujar_vidas(pantalla, jugador.vidas, jugador.x_max - 110, 30)
+            if jugador.bomba_usada:
+                dibujar_texto(pantalla, "Bomba: usada", fuentes["chica"], GRIS, (x, 80), False)
+            else:
+                dibujar_texto(pantalla, "Bomba: girá la linterna", fuentes["chica"],
+                              COLOR_BOMBA_MORTAL, (x, 80), False)
 
     for jugador in juego["jugadores"]:
         centro_zona = (jugador.x_min + jugador.x_max) // 2
         if jugador.mensaje_tiempo > 0:
             color = VERDE if jugador.mensaje == "+1" else ROJO
-            dibujar_texto(pantalla, jugador.mensaje, fuentes["grande"], color, (centro_zona, 120))
+            dibujar_texto(pantalla, jugador.mensaje, fuentes["grande"], color, (centro_zona, 150))
         if jugador.destello > 0:
             # la pantalla se pone roja solo en la zona del que cortó la bomba
             zona = pygame.Rect(0, 0, jugador.x_max - jugador.x_min, ALTO)
@@ -248,16 +264,22 @@ def dibujar_carteles(pantalla, estado, juego, fuentes, luces, umbral, capa_carte
                       (centro, medio + 60))
         dibujar_texto(pantalla, "2 = versus (cada uno en su mitad, con su linterna)",
                       fuentes["media"], VERDE, (centro, medio + 100))
-        dibujar_texto(pantalla, f"Umbral de brillo: {umbral}   (+/- para ajustar, M para ver la luz)"
-                      "   |   ESC para salir", fuentes["chica"], BLANCO, (centro, medio + 160))
+        dibujar_texto(pantalla, f"Umbral de brillo: {umbral}   (+/- para ajustar, M para ver la luz)",
+                      fuentes["chica"], BLANCO, (centro, medio + 150))
+        dibujar_texto(pantalla, "F = pantalla completa / ventana   |   ESC para salir",
+                      fuentes["chica"], BLANCO, (centro, medio + 180))
     elif estado == "cartel":
         segundos = max(1, int(juego["cartel"]) + 1)
         if juego["modo"] == 2:
-            dibujar_texto(pantalla, "VERSUS", fuentes["titulo"], AMARILLO, (centro, medio - 110))
+            dibujar_texto(pantalla, "VERSUS", fuentes["titulo"], AMARILLO, (centro, medio - 170))
             dibujar_texto(pantalla, f"Gana el primero en cortar {REGLAS_VERSUS['meta']} frutas",
-                          fuentes["media"], BLANCO, (centro, medio - 25))
+                          fuentes["media"], BLANCO, (centro, medio - 90))
             dibujar_texto(pantalla, "o el que sobreviva si el otro se queda sin vidas",
-                          fuentes["chica"], BLANCO, (centro, medio + 15))
+                          fuentes["chica"], BLANCO, (centro, medio - 55))
+            dibujar_texto(pantalla, "Girá la linterna en círculos para mandarle una BOMBA MORTAL al rival",
+                          fuentes["chica"], COLOR_BOMBA_MORTAL, (centro, medio - 10))
+            dibujar_texto(pantalla, "(una sola vez, y te deja con 1 vida)",
+                          fuentes["chica"], COLOR_BOMBA_MORTAL, (centro, medio + 18))
             dibujar_texto(pantalla, "Jugador 1: izquierda", fuentes["media"], COLOR_JUGADOR_1,
                           (centro - 200, medio + 70))
             dibujar_texto(pantalla, "Jugador 2: derecha", fuentes["media"], COLOR_JUGADOR_2,
@@ -302,7 +324,11 @@ def dibujar_carteles(pantalla, estado, juego, fuentes, luces, umbral, capa_carte
 
 def main():
     pygame.init()
-    pantalla = pygame.display.set_mode((ANCHO, ALTO))
+    # SCALED: el juego sigue midiendo ANCHO x ALTO y pygame lo agranda a la pantalla.
+    opciones = pygame.SCALED
+    if PANTALLA_COMPLETA:
+        opciones |= pygame.FULLSCREEN
+    pantalla = pygame.display.set_mode((ANCHO, ALTO), opciones)
     pygame.display.set_caption(TITULO)
     reloj = pygame.time.Clock()
 
@@ -345,6 +371,8 @@ def main():
                 elif evento.key == pygame.K_SPACE and puede_empezar:
                     juego = nueva_partida(juego["modo"])   # mismo modo que la última vez
                     estado = "cartel"
+                elif evento.key == pygame.K_f:
+                    pygame.display.toggle_fullscreen()   # en ventana aparece la X para cerrar
                 elif evento.key == pygame.K_m:
                     ver_mascara = not ver_mascara
                 elif evento.unicode in ("+", "="):
