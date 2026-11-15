@@ -61,8 +61,8 @@ FRUTAS_JUGADOR_2 = [
 ]
 
 # --- Partida ---
-VIDAS = 3                  # las vidas se recargan al empezar cada nivel
-DURACION_CARTEL = 2.5      # segundos que se muestra "NIVEL X" antes de empezar
+VIDAS = 3                  # para toda la partida
+DURACION_CARTEL = 3        # segundos de cuenta regresiva antes de empezar
 DURACION_MENSAJE = 0.6     # segundos que se ve un mensaje como "+1" o "BOMBA!"
 DURACION_DESTELLO = 0.25   # segundos que la pantalla queda roja al cortar una bomba
 
@@ -91,21 +91,43 @@ RADIO_LUZ = 12
 MARGEN_CORTE = 10          # píxeles extra alrededor de la fruta que también cuentan como corte
 MOVIMIENTO_MINIMO = 6      # la luz tiene que moverse al menos esto en un cuadro para cortar
 
-# Cada nivel es un diccionario con sus reglas. Para hacerlo más fácil o más
-# difícil, o para agregar niveles, solo hay que tocar esta lista.
-#   meta:       frutas que hay que cortar para pasar de nivel
+# --- Dificultad ---
+# El juego no termina hasta que perdés. La dificultad sube sola, sin avisar:
+#   1 jugador: cada FRUTAS_POR_NIVEL frutas cortadas se pasa al nivel siguiente.
+#   Versus:    cada SEGUNDOS_POR_NIVEL segundos (igual para los dos jugadores).
+FRUTAS_POR_NIVEL = 10
+SEGUNDOS_POR_NIVEL = 20
+NIVEL_INICIAL_VERSUS = 1
+
+# Los primeros niveles están armados a mano. Para hacerlo más fácil o más difícil
+# alcanza con tocar esta lista.
 #   max_frutas: cuántas frutas puede haber en pantalla a la vez
 #   radio:      tamaño de las frutas (mín, máx) en píxeles
 #   espera:     segundos entre una fruta y la siguiente (mín, máx)
 #   gravedad:   más alto = suben y caen más rápido (píxeles por segundo al cuadrado)
 #   bombas:     probabilidad de que salga una bomba (0.2 = 20 %)
 NIVELES = [
-    {"meta": 8,  "max_frutas": 3, "radio": (45, 64), "espera": (1.5, 2.2), "gravedad": 110, "bombas": 0.00},
-    {"meta": 10, "max_frutas": 3, "radio": (41, 60), "espera": (1.2, 1.9), "gravedad": 150, "bombas": 0.10},
-    {"meta": 12, "max_frutas": 4, "radio": (38, 54), "espera": (1.0, 1.6), "gravedad": 200, "bombas": 0.15},
-    {"meta": 14, "max_frutas": 5, "radio": (34, 49), "espera": (0.8, 1.3), "gravedad": 270, "bombas": 0.18},
-    {"meta": 16, "max_frutas": 6, "radio": (30, 44), "espera": (0.6, 1.1), "gravedad": 360, "bombas": 0.22},
+    {"max_frutas": 3, "radio": (45, 64), "espera": (1.5, 2.2), "gravedad": 110, "bombas": 0.00},
+    {"max_frutas": 3, "radio": (41, 60), "espera": (1.2, 1.9), "gravedad": 150, "bombas": 0.10},
+    {"max_frutas": 4, "radio": (38, 54), "espera": (1.0, 1.6), "gravedad": 200, "bombas": 0.15},
+    {"max_frutas": 5, "radio": (34, 49), "espera": (0.8, 1.3), "gravedad": 270, "bombas": 0.18},
+    {"max_frutas": 6, "radio": (30, 44), "espera": (0.6, 1.1), "gravedad": 360, "bombas": 0.22},
 ]
+# Después del último nivel de la lista, cada nivel nuevo es un poco más difícil
+# que el anterior, pero sin pasar estos topes (si no, sería imposible).
+AUMENTO_GRAVEDAD = 1.06    # cada nivel extra, la gravedad se multiplica por esto
+ACHIQUE_ESPERA = 0.93      # y la espera entre frutas por esto
+AUMENTO_BOMBAS = 0.02
+TOPE_GRAVEDAD = 650
+TOPE_ESPERA = (0.3, 0.5)
+TOPE_BOMBAS = 0.35
+TOPE_MAX_FRUTAS = 8
+RADIO_MINIMO = 26
+
+# --- Resultados guardados ---
+ARCHIVO_RESULTADOS = "resultados.json"   # récord y partidas del versus
+PARTIDAS_EN_PANTALLA = 5   # cuántas partidas del versus se muestran al terminar
+LARGO_MAXIMO_NOMBRE = 12
 
 # --- Bomba mortal (solo en el versus) ---
 # Girando la linterna en círculos se carga una bola; al completarla se convierte
@@ -119,8 +141,3 @@ RADIO_BOLA = 40            # tamaño de la bola cuando está completa
 RADIO_BOMBA_MORTAL = 48
 GRAVEDAD_BOMBA_MORTAL = 160  # cae despacio, así molesta un buen rato
 VIDAS_AL_TIRAR_BOMBA = 1
-
-# Versus (2 jugadores, pantalla dividida): cada uno corta en su mitad.
-# Gana el primero que llega a la meta, o el que sobrevive si el otro se queda sin vidas.
-REGLAS_VERSUS = {"meta": 15, "max_frutas": 3, "radio": (34, 50), "espera": (1.0, 1.6),
-                 "gravedad": 200, "bombas": 0.15}

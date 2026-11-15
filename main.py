@@ -5,15 +5,17 @@ espada: cada fruta que cruza el rastro de la luz se corta. Las bombas y
 las frutas que se caen sin cortar quitan una vida.
 
 Modos:
-  1 jugador: 5 niveles, cada uno más difícil.
-  Versus:    pantalla dividida, cada jugador con su linterna y sus frutas en su
-             mitad. Gana el primero en llegar a la meta o el que sobrevive.
+  1 jugador: la partida no termina hasta que perdés las 3 vidas, y se pone
+             cada vez más difícil (sin avisar). Hay que superar el récord.
+  Versus:    cada jugador escribe su nombre y juega en su mitad de la
+             pantalla, con su linterna y sus frutas. Gana el que aguante más.
              Girando la linterna en círculos se carga una bomba mortal que
              aparece en la mitad del rival (una vez por partida, te deja con 1 vida).
+             Las partidas quedan guardadas.
 
 Controles:
   1 / 2    empezar 1 jugador / versus
-  ESPACIO  empezar / volver a jugar el mismo modo
+  ESPACIO  volver a jugar el mismo modo
   + / -    subir / bajar el umbral de brillo de la detección
   M        mostrar / ocultar lo que la cámara toma como "luz"
   F        pantalla completa / ventana
@@ -30,6 +32,7 @@ os.environ.setdefault("SDL_RENDER_SCALE_QUALITY", "linear")
 import pygame
 
 import graficos
+import resultados
 import vision
 from ajustes import *
 from objetos import Fruta, Jugador
@@ -75,33 +78,52 @@ def crear_capa(color):
 # Lógica de la partida
 # ---------------------------------------------------------------------------
 
-def nueva_partida(modo):
-    """Devuelve el estado inicial de una partida. modo 1 = un jugador, 2 = versus."""
+def nueva_partida(modo, nombres, record):
+    """Devuelve el estado inicial de una partida. modo 1 = un jugador, 2 = versus.
+    `nombres` son los nombres del versus y `record` el récord a superar."""
     if modo == 1:
-        jugadores = [Jugador("Jugador", COLOR_RASTRO, 0, ANCHO,
-                             FRUTAS_JUGADOR_1 + FRUTAS_JUGADOR_2)]
+        jugadores = [Jugador("Vos", COLOR_RASTRO, 0, ANCHO, FRUTAS_JUGADOR_1 + FRUTAS_JUGADOR_2)]
     else:
         # cada uno con sus frutas y con su bomba mortal
-        jugadores = [Jugador("Jugador 1", COLOR_JUGADOR_1, 0, MITAD, FRUTAS_JUGADOR_1, True),
-                     Jugador("Jugador 2", COLOR_JUGADOR_2, MITAD, ANCHO, FRUTAS_JUGADOR_2, True)]
-    juego = {"modo": modo, "jugadores": jugadores, "resultado": ""}
-    empezar_nivel(juego, 0)
-    return juego
+        jugadores = [Jugador(nombres[0], COLOR_JUGADOR_1, 0, MITAD, FRUTAS_JUGADOR_1, True),
+                     Jugador(nombres[1], COLOR_JUGADOR_2, MITAD, ANCHO, FRUTAS_JUGADOR_2, True)]
+    return {
+        "modo": modo,
+        "jugadores": jugadores,
+        "cartel": DURACION_CARTEL,  # cuenta regresiva antes de empezar
+        "tiempo": 0.0,              # segundos jugados (sin contar las pausas)
+        "record": record,           # el récord que había al empezar
+        "supero_record": False,     # ya pasó el récord durante la partida
+        "nuevo_record": False,      # al terminar: ¿quedó como récord nuevo?
+        "resultado": "",            # versus: texto del resultado
+        "ganador": "",              # versus: nombre del ganador ("" si empataron)
+    }
 
 
-def empezar_nivel(juego, numero):
-    """Deja todo listo para arrancar el nivel `numero` (0 = nivel 1)."""
-    juego["nivel"] = numero
-    juego["cartel"] = DURACION_CARTEL   # cuenta regresiva del cartel "NIVEL X"
-    for jugador in juego["jugadores"]:
-        jugador.reiniciar()
+def reglas_de_nivel(nivel):
+    """Devuelve las reglas de un nivel (0, 1, 2...). Los primeros vienen de la
+    lista NIVELES; después, cada nivel es un poco más difícil, hasta los topes."""
+    if nivel < len(NIVELES):
+        return NIVELES[nivel]
+    base = NIVELES[-1]
+    extra = nivel - len(NIVELES) + 1     # cuántos niveles pasamos del último de la lista
+    return {
+        "max_frutas": min(TOPE_MAX_FRUTAS, base["max_frutas"] + extra // 2),
+        "radio": (max(RADIO_MINIMO, base["radio"][0] - extra),
+                  max(RADIO_MINIMO + 10, base["radio"][1] - extra)),
+        "espera": (max(TOPE_ESPERA[0], base["espera"][0] * ACHIQUE_ESPERA ** extra),
+                   max(TOPE_ESPERA[1], base["espera"][1] * ACHIQUE_ESPERA ** extra)),
+        "gravedad": min(TOPE_GRAVEDAD, base["gravedad"] * AUMENTO_GRAVEDAD ** extra),
+        "bombas": min(TOPE_BOMBAS, base["bombas"] + AUMENTO_BOMBAS * extra),
+    }
 
 
-def reglas_actuales(juego):
-    """Devuelve las reglas que se usan ahora: las del nivel o las del versus."""
-    if juego["modo"] == 2:
-        return REGLAS_VERSUS
-    return NIVELES[juego["nivel"]]
+def nivel_actual(juego):
+    """Devuelve el nivel de dificultad. Sube solo, sin avisar: jugando solo,
+    cada FRUTAS_POR_NIVEL frutas cortadas; en el versus, cada SEGUNDOS_POR_NIVEL."""
+    if juego["modo"] == 1:
+        return juego["jugadores"][0].cortadas // FRUTAS_POR_NIVEL
+    return NIVEL_INICIAL_VERSUS + int(juego["tiempo"] // SEGUNDOS_POR_NIVEL)
 
 
 def esta_pausado(juego):
@@ -110,30 +132,30 @@ def esta_pausado(juego):
 
 
 def resultado_versus(jugadores):
-    """Devuelve el texto del resultado si el versus terminó, o None si sigue."""
+    """Gana el que aguanta más. Devuelve (texto, nombre del ganador) si alguno
+    se quedó sin vidas, o None si la partida sigue."""
     uno, dos = jugadores
-    llego_uno = uno.cortadas >= REGLAS_VERSUS["meta"] or dos.vidas <= 0
-    llego_dos = dos.cortadas >= REGLAS_VERSUS["meta"] or uno.vidas <= 0
-    if llego_uno and llego_dos:
-        return "¡EMPATE!"
-    if llego_uno:
-        return f"¡GANÓ EL {uno.nombre.upper()}!"
-    if llego_dos:
-        return f"¡GANÓ EL {dos.nombre.upper()}!"
+    if uno.vidas <= 0 and dos.vidas <= 0:
+        return "¡EMPATE!", ""
+    if dos.vidas <= 0:
+        return f"¡GANÓ {uno.nombre.upper()}!", uno.nombre
+    if uno.vidas <= 0:
+        return f"¡GANÓ {dos.nombre.upper()}!", dos.nombre
     return None
 
 
 def actualizar_partida(juego, luces, dt, sonidos):
     """Avanza la partida un cuadro. `luces` tiene la posición de la luz de cada
     jugador ((x, y) o None). Devuelve el estado siguiente:
-    'jugando', 'cartel' (pasó de nivel), 'ganaste', 'perdiste' o 'fin_versus'."""
-    reglas = reglas_actuales(juego)
+    'jugando', 'perdiste' (1 jugador) o 'fin_versus'."""
+    reglas = reglas_de_nivel(nivel_actual(juego))
     jugadores = juego["jugadores"]
     segmentos = [jugador.mover_luz(luz, dt) for jugador, luz in zip(jugadores, luces)]
 
     # Si la cámara no ve una linterna, el juego no se rompe: se pausa hasta que vuelva.
     if esta_pausado(juego):
         return "jugando"
+    juego["tiempo"] += dt
 
     for jugador, segmento in zip(jugadores, segmentos):
         jugador.actualizar(segmento, reglas, dt, sonidos)
@@ -148,23 +170,54 @@ def actualizar_partida(juego, luces, dt, sonidos):
         resultado = resultado_versus(jugadores)
         if resultado is None:
             return "jugando"
-        juego["resultado"] = resultado
+        juego["resultado"], juego["ganador"] = resultado
         sonidos["ganar"].play()
         return "fin_versus"
 
-    # Un jugador: ¿perdió, pasó de nivel o ganó?
+    # Un jugador: avisar una sola vez cuando pasa el récord, y terminar si no le quedan vidas.
     jugador = jugadores[0]
+    if juego["record"] > 0 and not juego["supero_record"] and jugador.puntos > juego["record"]:
+        juego["supero_record"] = True
+        jugador.mostrar_mensaje("¡NUEVO RÉCORD!", AMARILLO, DURACION_MENSAJE * 3)
+        sonidos["nivel"].play()
     if jugador.vidas <= 0:
         sonidos["perder"].play()
         return "perdiste"
-    if jugador.cortadas >= reglas["meta"]:
-        if juego["nivel"] + 1 < len(NIVELES):
-            empezar_nivel(juego, juego["nivel"] + 1)
-            sonidos["nivel"].play()
-            return "cartel"
-        sonidos["ganar"].play()
-        return "ganaste"
     return "jugando"
+
+
+def terminar_partida(juego, datos):
+    """Guarda el resultado de la partida que acaba de terminar."""
+    if juego["modo"] == 1:
+        juego["nuevo_record"] = resultados.registrar_puntaje(datos, juego["jugadores"][0].puntos)
+    else:
+        uno, dos = juego["jugadores"]
+        resultados.registrar_versus(datos, uno, dos, juego["ganador"], juego["tiempo"])
+
+
+def escribir_nombre(nombres, cual, evento):
+    """Agrega o borra letras del nombre que se está escribiendo. Devuelve cuál
+    se escribe ahora: 0, 1, o 2 cuando ya están los dos (ENTER en el segundo)."""
+    if evento.type == pygame.TEXTINPUT:
+        if len(nombres[cual]) < LARGO_MAXIMO_NOMBRE:
+            nombres[cual] += evento.text
+    elif evento.key == pygame.K_BACKSPACE:
+        nombres[cual] = nombres[cual][:-1]
+    elif evento.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+        nombres[cual] = nombres[cual].strip() or f"Jugador {cual + 1}"
+        return cual + 1
+    return cual
+
+
+def frutas(cantidad):
+    """Devuelve '1 fruta' o 'N frutas', según la cantidad."""
+    return f"{cantidad} fruta" if cantidad == 1 else f"{cantidad} frutas"
+
+
+def formato_tiempo(segundos):
+    """Devuelve los segundos como texto 'minutos:segundos' (por ejemplo 1:05)."""
+    segundos = int(segundos)
+    return f"{segundos // 60}:{segundos % 60:02d}"
 
 
 # ---------------------------------------------------------------------------
@@ -215,45 +268,44 @@ def actualizar_adornos(adornos, dt):
 
 
 def dibujar_vidas(pantalla, corazones, vidas, x, y):
-    """Dibuja un corazón por vida, centrados a partir de (x, y)."""
+    """Dibuja un corazón por vida, a partir de (x, y)."""
     for i in range(VIDAS):
         imagen = corazones[i < vidas]       # True = corazón lleno, False = vacío
         pantalla.blit(imagen, imagen.get_rect(center=(x + i * 40, y)))
 
 
 def dibujar_hud(pantalla, juego, fuentes, paneles, corazones, destello):
-    """Paneles con nivel, progreso, puntos, vidas y mensajes de cada jugador."""
-    reglas = reglas_actuales(juego)
+    """Paneles con puntos, récord, vidas y los mensajes de cada jugador."""
     if juego["modo"] == 1:
         jugador = juego["jugadores"][0]
-        pantalla.blit(paneles["nivel"], (12, 10))
-        dibujar_texto(pantalla, f"Nivel {juego['nivel'] + 1}/{len(NIVELES)}",
-                      fuentes["media"], AMARILLO, (28, 18), False)
-        dibujar_texto(pantalla, f"{jugador.cortadas}/{reglas['meta']}",
-                      fuentes["chica"], BLANCO, (200, 24), False)
-        graficos.dibujar_barra(pantalla, pygame.Rect(28, 58, 238, 18),
-                               jugador.cortadas / reglas["meta"], VERDE)
-        x_panel = ANCHO - 12 - paneles["puntos"].get_width()
-        pantalla.blit(paneles["puntos"], (x_panel, 10))
-        dibujar_texto(pantalla, f"Puntos: {jugador.puntos}", fuentes["media"], BLANCO,
-                      (x_panel + 16, 18), False)
-        dibujar_vidas(pantalla, corazones, jugador.vidas, x_panel + 36, 60)
+        pantalla.blit(paneles["puntos"], (12, 10))
+        dibujar_texto(pantalla, "PUNTOS", fuentes["chica"], GRIS, (30, 18), False)
+        dibujar_texto(pantalla, str(jugador.puntos), fuentes["grande"], BLANCO, (28, 32), False)
+        if juego["supero_record"]:
+            dibujar_texto(pantalla, "¡Récord superado!", fuentes["chica"], AMARILLO, (30, 82), False)
+        elif juego["record"] > 0:
+            dibujar_texto(pantalla, f"Récord: {juego['record']}", fuentes["chica"], AMARILLO, (30, 82), False)
+        else:
+            dibujar_texto(pantalla, "Sin récord todavía", fuentes["chica"], GRIS, (30, 82), False)
+        x_panel = ANCHO - 12 - paneles["vidas"].get_width()
+        pantalla.blit(paneles["vidas"], (x_panel, 10))
+        dibujar_vidas(pantalla, corazones, jugador.vidas, x_panel + 40, 42)
     else:
         for jugador in juego["jugadores"]:
             x = jugador.x_min + 12
             pantalla.blit(paneles["versus"], (x, 10))
             dibujar_texto(pantalla, jugador.nombre, fuentes["media"], jugador.color, (x + 16, 16), False)
             dibujar_vidas(pantalla, corazones, jugador.vidas, x + 205, 32)
-            barra = pygame.Rect(x + 16, 54, paneles["versus"].get_width() - 32, 18)
-            graficos.dibujar_barra(pantalla, barra, jugador.cortadas / reglas["meta"], jugador.color)
-            dibujar_texto(pantalla, f"{jugador.cortadas}/{reglas['meta']}", fuentes["chica"],
-                          BLANCO, barra.center)
+            dibujar_texto(pantalla, f"Frutas: {jugador.cortadas}", fuentes["media"], BLANCO,
+                          (x + 16, 50), False)
             if jugador.bomba_usada:
-                dibujar_texto(pantalla, "Bomba usada", fuentes["chica"], GRIS, (x + 16, 80), False)
+                dibujar_texto(pantalla, "Bomba usada", fuentes["chica"], GRIS, (x + 16, 84), False)
             else:
-                pygame.draw.circle(pantalla, COLOR_BOMBA_MORTAL, (x + 24, 91), 8)
+                pygame.draw.circle(pantalla, COLOR_BOMBA_MORTAL, (x + 24, 95), 8)
                 dibujar_texto(pantalla, "Girá la linterna: bomba mortal", fuentes["chica"],
-                              COLOR_BOMBA_MORTAL, (x + 38, 80), False)
+                              COLOR_BOMBA_MORTAL, (x + 38, 84), False)
+        dibujar_texto(pantalla, formato_tiempo(juego["tiempo"]), fuentes["media"], BLANCO,
+                      (MITAD, ALTO - 24))
 
     for jugador in juego["jugadores"]:
         centro_zona = (jugador.x_min + jugador.x_max) // 2
@@ -263,14 +315,37 @@ def dibujar_hud(pantalla, juego, fuentes, paneles, corazones, destello):
             zona = pygame.Rect(0, 0, jugador.x_max - jugador.x_min, ALTO)
             pantalla.blit(destello, (jugador.x_min, 0), zona)
         if jugador.mensaje_tiempo > 0:
-            dibujar_texto(pantalla, jugador.mensaje, fuentes["grande"], ROJO, (centro_zona, 170))
+            dibujar_texto(pantalla, jugador.mensaje, fuentes["grande"], jugador.mensaje_color,
+                          (centro_zona, 170))
         if jugador.luz is None and not esta_pausado(juego):
             dibujar_texto(pantalla, "No veo la linterna", fuentes["media"], ROJO,
-                          (centro_zona, ALTO - 40))
+                          (centro_zona, ALTO - 60))
 
 
-def dibujar_carteles(pantalla, estado, juego, fuentes, luces, umbral, tiempo):
-    """Escribe los textos que corresponden a cada estado (menú, nivel, fin...)."""
+def dibujar_nombres(pantalla, fuentes, nombres, cual, tiempo):
+    """La pantalla donde cada jugador escribe su nombre antes del versus."""
+    centro = ANCHO // 2
+    dibujar_texto(pantalla, "VERSUS", fuentes["titulo"], AMARILLO, (centro, 80))
+    dibujar_texto(pantalla, "Escriban sus nombres", fuentes["media"], BLANCO, (centro, 150))
+    lados = (("Jugador 1 (izquierda)", COLOR_JUGADOR_1, centro - 220),
+             ("Jugador 2 (derecha)", COLOR_JUGADOR_2, centro + 220))
+    for i, (titulo, color, x) in enumerate(lados):
+        activo = i == cual
+        dibujar_texto(pantalla, titulo, fuentes["media"], color, (x, 225))
+        caja = pygame.Rect(0, 0, 360, 64)
+        caja.center = (x, 285)
+        pygame.draw.rect(pantalla, (10, 10, 30), caja, border_radius=12)
+        pygame.draw.rect(pantalla, color if activo else GRIS, caja, 4 if activo else 2, border_radius=12)
+        texto = nombres[i]
+        if activo and int(tiempo * 2) % 2 == 0:
+            texto += "|"                     # cursor que titila
+        dibujar_texto(pantalla, texto, fuentes["grande"], BLANCO if activo else GRIS, caja.center)
+    dibujar_texto(pantalla, "ENTER = listo     BORRAR = corregir     ESC = volver al menú",
+                  fuentes["media"], VERDE, (centro, 400))
+
+
+def dibujar_carteles(pantalla, estado, juego, fuentes, luces, umbral, tiempo, datos):
+    """Escribe los textos que corresponden a cada estado (menú, cuenta regresiva, final)."""
     centro = ANCHO // 2
     medio = ALTO // 2
     if estado == "jugando":
@@ -278,7 +353,7 @@ def dibujar_carteles(pantalla, estado, juego, fuentes, luces, umbral, tiempo):
             dibujar_texto(pantalla, "PAUSA", fuentes["grande"], AMARILLO, (centro, medio - 50))
             for i, jugador in enumerate(juego["jugadores"]):
                 if jugador.perdio_la_luz():
-                    quien = "tu linterna" if juego["modo"] == 1 else f"la linterna del {jugador.nombre}"
+                    quien = "tu linterna" if juego["modo"] == 1 else f"la linterna de {jugador.nombre}"
                     dibujar_texto(pantalla, f"No veo {quien}", fuentes["media"], ROJO,
                                   (centro, medio + 10 + i * 40))
             dibujar_texto(pantalla, "Apuntala a la cámara para seguir", fuentes["chica"], BLANCO,
@@ -295,59 +370,85 @@ def dibujar_carteles(pantalla, estado, juego, fuentes, luces, umbral, tiempo):
             dibujar_texto(pantalla, "Linterna detectada", fuentes["media"], VERDE, (centro, medio + 5))
         else:
             dibujar_texto(pantalla, "No veo la linterna", fuentes["media"], ROJO, (centro, medio + 5))
-        dibujar_texto(pantalla, f"1  =  un jugador ({len(NIVELES)} niveles)", fuentes["grande"],
-                      AMARILLO, (centro, medio + 65))
-        dibujar_texto(pantalla, "2  =  versus", fuentes["grande"], AMARILLO, (centro, medio + 120))
+        dibujar_texto(pantalla, "1  =  un jugador", fuentes["grande"], AMARILLO, (centro, medio + 60))
+        dibujar_texto(pantalla, "2  =  versus", fuentes["grande"], AMARILLO, (centro, medio + 110))
+        if datos["record"] > 0:
+            dibujar_texto(pantalla, f"Récord: {datos['record']}", fuentes["media"], BLANCO,
+                          (centro, medio + 160))
         dibujar_texto(pantalla, f"Umbral de brillo: {umbral}   (+/- para ajustar, M para ver la luz)"
                       "   |   F = pantalla completa   |   ESC = salir",
-                      fuentes["chica"], GRIS, (centro, ALTO - 25))
+                      fuentes["chica"], GRIS, (centro, ALTO - 20))
+
     elif estado == "cartel":
         segundos = max(1, int(juego["cartel"]) + 1)
         if juego["modo"] == 2:
-            dibujar_texto(pantalla, "VERSUS", fuentes["titulo"], AMARILLO, (centro, medio - 170))
-            dibujar_texto(pantalla, f"Gana el primero en cortar {REGLAS_VERSUS['meta']} frutas",
-                          fuentes["media"], BLANCO, (centro, medio - 95))
-            dibujar_texto(pantalla, "o el que sobreviva si el otro se queda sin vidas",
-                          fuentes["chica"], BLANCO, (centro, medio - 62))
-            dibujar_texto(pantalla, "Girá la linterna en círculos para mandarle una BOMBA MORTAL al rival",
-                          fuentes["chica"], COLOR_BOMBA_MORTAL, (centro, medio - 20))
-            dibujar_texto(pantalla, "(una sola vez, y te deja con 1 vida)",
-                          fuentes["chica"], COLOR_BOMBA_MORTAL, (centro, medio + 4))
-            dibujar_texto(pantalla, "Jugador 1: izquierda", fuentes["media"], COLOR_JUGADOR_1,
-                          (centro - 210, medio + 60))
-            dibujar_texto(pantalla, "Jugador 2: derecha", fuentes["media"], COLOR_JUGADOR_2,
-                          (centro + 210, medio + 60))
-        else:
-            reglas = reglas_actuales(juego)
-            if juego["nivel"] > 0:
-                dibujar_texto(pantalla, "¡NIVEL SUPERADO!", fuentes["grande"], VERDE, (centro, medio - 140))
-            dibujar_texto(pantalla, f"NIVEL {juego['nivel'] + 1}", fuentes["titulo"], AMARILLO,
-                          (centro, medio - 55))
-            dibujar_texto(pantalla, f"Cortá {reglas['meta']} frutas para pasar",
-                          fuentes["media"], BLANCO, (centro, medio + 25))
-            if reglas["bombas"] > 0:
-                dibujar_texto(pantalla, "Cuidado con las bombas", fuentes["media"], ROJO,
-                              (centro, medio + 65))
-        dibujar_texto(pantalla, str(segundos), fuentes["titulo"], VERDE, (centro, medio + 150))
-    else:
-        jugador = juego["jugadores"][0]
-        if estado == "ganaste":
-            dibujar_texto(pantalla, "¡GANASTE!", fuentes["titulo"], VERDE, (centro, medio - 90))
-            dibujar_texto(pantalla, f"Pasaste los {len(NIVELES)} niveles  -  Puntos: {jugador.puntos}",
-                          fuentes["media"], BLANCO, (centro, medio))
-        elif estado == "perdiste":
-            dibujar_texto(pantalla, "FIN DE LA PARTIDA", fuentes["titulo"], ROJO, (centro, medio - 90))
-            dibujar_texto(pantalla, f"Llegaste al nivel {juego['nivel'] + 1}  -  Puntos: {jugador.puntos}",
-                          fuentes["media"], BLANCO, (centro, medio))
-        else:  # "fin_versus"
             uno, dos = juego["jugadores"]
-            dibujar_texto(pantalla, juego["resultado"], fuentes["titulo"], AMARILLO, (centro, medio - 90))
-            dibujar_texto(pantalla, f"{uno.nombre}: {uno.cortadas} frutas", fuentes["media"],
-                          COLOR_JUGADOR_1, (centro - 210, medio))
-            dibujar_texto(pantalla, f"{dos.nombre}: {dos.cortadas} frutas", fuentes["media"],
-                          COLOR_JUGADOR_2, (centro + 210, medio))
-        dibujar_texto(pantalla, "ESPACIO = revancha     1 / 2 = cambiar de modo     ESC = salir",
-                      fuentes["media"], VERDE, (centro, medio + 90))
+            dibujar_texto(pantalla, uno.nombre, fuentes["grande"], COLOR_JUGADOR_1, (centro - 240, medio - 165))
+            dibujar_texto(pantalla, "vs", fuentes["grande"], AMARILLO, (centro, medio - 165))
+            dibujar_texto(pantalla, dos.nombre, fuentes["grande"], COLOR_JUGADOR_2, (centro + 240, medio - 165))
+            dibujar_texto(pantalla, "Gana el que aguante más:", fuentes["media"], BLANCO, (centro, medio - 90))
+            dibujar_texto(pantalla, "pierde el primero que se queda sin vidas",
+                          fuentes["media"], BLANCO, (centro, medio - 60))
+            dibujar_texto(pantalla, "Girá la linterna en círculos para mandarle una BOMBA MORTAL al rival",
+                          fuentes["chica"], COLOR_BOMBA_MORTAL, (centro, medio - 15))
+            dibujar_texto(pantalla, "(una sola vez, y te deja con 1 vida)",
+                          fuentes["chica"], COLOR_BOMBA_MORTAL, (centro, medio + 8))
+        else:
+            dibujar_texto(pantalla, "¡A CORTAR!", fuentes["titulo"], AMARILLO, (centro, medio - 150))
+            if juego["record"] > 0:
+                dibujar_texto(pantalla, f"Récord a superar: {juego['record']}", fuentes["grande"],
+                              BLANCO, (centro, medio - 70))
+            else:
+                dibujar_texto(pantalla, "Todavía no hay récord: hacé el primero", fuentes["media"],
+                              BLANCO, (centro, medio - 70))
+            dibujar_texto(pantalla, "La partida sigue hasta que te quedes sin vidas",
+                          fuentes["media"], BLANCO, (centro, medio - 15))
+            dibujar_texto(pantalla, "y cada vez se pone más difícil",
+                          fuentes["media"], BLANCO, (centro, medio + 15))
+        dibujar_texto(pantalla, str(segundos), fuentes["titulo"], VERDE, (centro, medio + 120))
+
+    elif estado == "perdiste":
+        jugador = juego["jugadores"][0]
+        dibujar_texto(pantalla, "FIN DE LA PARTIDA", fuentes["titulo"], ROJO, (centro, medio - 150))
+        dibujar_texto(pantalla, f"Cortaste {frutas(jugador.puntos)}", fuentes["grande"], BLANCO,
+                      (centro, medio - 65))
+        if juego["nuevo_record"]:
+            tono = graficos.mezclar(AMARILLO, BLANCO, (math.sin(tiempo * 6) + 1) / 2)
+            dibujar_texto(pantalla, "¡NUEVO RÉCORD!", fuentes["titulo"], tono, (centro, medio + 15))
+        else:
+            faltaron = juego["record"] - jugador.puntos + 1
+            dibujar_texto(pantalla, f"Récord: {juego['record']}", fuentes["grande"], AMARILLO,
+                          (centro, medio))
+            verbo = "Te faltó" if faltaron == 1 else "Te faltaron"
+            dibujar_texto(pantalla, f"{verbo} {frutas(faltaron)} para superarlo", fuentes["media"],
+                          BLANCO, (centro, medio + 45))
+        dibujar_texto(pantalla, "ESPACIO = otra vez     2 = versus     ESC = salir",
+                      fuentes["media"], VERDE, (centro, medio + 130))
+
+    elif estado == "fin_versus":
+        uno, dos = juego["jugadores"]
+        dibujar_texto(pantalla, juego["resultado"], fuentes["titulo"], AMARILLO, (centro, 60))
+        dibujar_texto(pantalla, f"{uno.nombre}: {frutas(uno.cortadas)}", fuentes["media"],
+                      COLOR_JUGADOR_1, (centro - 210, 125))
+        dibujar_texto(pantalla, f"{dos.nombre}: {frutas(dos.cortadas)}", fuentes["media"],
+                      COLOR_JUGADOR_2, (centro + 210, 125))
+        dibujar_texto(pantalla, f"Duración: {formato_tiempo(juego['tiempo'])}", fuentes["chica"],
+                      GRIS, (centro, 155))
+        ganadas1, ganadas2, empates = resultados.historial_entre(datos["versus"], uno.nombre, dos.nombre)
+        historial = f"Historial: {uno.nombre} {ganadas1} - {ganadas2} {dos.nombre}"
+        if empates:
+            historial += f"   ({empates} empate{'s' if empates > 1 else ''})"
+        dibujar_texto(pantalla, historial, fuentes["grande"], BLANCO, (centro, 205))
+        dibujar_texto(pantalla, "Últimas partidas", fuentes["media"], AMARILLO, (centro, 260))
+        ultimas = datos["versus"][-PARTIDAS_EN_PANTALLA:][::-1]     # la más nueva primero
+        for i, partida in enumerate(ultimas):
+            ganador = f"ganó {partida['ganador']}" if partida["ganador"] else "empate"
+            linea = (f"{partida['fecha']}    {partida['jugador1']} {partida['frutas1']} - "
+                     f"{partida['frutas2']} {partida['jugador2']}    {ganador}")
+            dibujar_texto(pantalla, linea, fuentes["chica"], BLANCO if i == 0 else GRIS,
+                          (centro, 292 + i * 26))
+        dibujar_texto(pantalla, "ESPACIO = revancha     2 = otros nombres     1 = un jugador     ESC = salir",
+                      fuentes["media"], VERDE, (centro, ALTO - 35))
 
 
 # ---------------------------------------------------------------------------
@@ -363,8 +464,11 @@ def main():
     pantalla = pygame.display.set_mode((ANCHO, ALTO), opciones)
     pygame.display.set_caption(TITULO)
     reloj = pygame.time.Clock()
+    # Sin "modo escritura": las teclas no generan texto (se activa solo para los nombres).
+    pygame.key.stop_text_input()
 
-    # La cámara, los sonidos, las fuentes y las capas se abren / arman una sola vez.
+    # La cámara, los sonidos, las fuentes, los resultados guardados y las capas
+    # se abren / cargan / arman una sola vez, antes del bucle.
     cap = vision.abrir_camara()
     if cap is None:
         print("No se pudo abrir la cámara. Revisá que esté conectada y los permisos.")
@@ -372,6 +476,7 @@ def main():
         return
     sonidos = cargar_sonidos()
     fuentes = cargar_fuentes()
+    datos = resultados.cargar_resultados()
     fondo = graficos.crear_fondo(ANCHO, ALTO, COLOR_FONDO, OSCURIDAD_CENTRO, OSCURIDAD_BORDE)
     capa_cartel = crear_capa(CAPA_CARTEL)
     destello = crear_capa((255, 30, 30, 110))
@@ -381,15 +486,17 @@ def main():
     capa_nitida = pygame.Surface((ANCHO, ALTO))
     corazones = {True: graficos.crear_corazon(28, True), False: graficos.crear_corazon(28, False)}
     paneles = {
-        "nivel": graficos.crear_panel(270, 84),
-        "puntos": graficos.crear_panel(200, 84),
-        "versus": graficos.crear_panel(MITAD - 24, 104),
+        "puntos": graficos.crear_panel(200, 104),
+        "vidas": graficos.crear_panel(160, 64),
+        "versus": graficos.crear_panel(MITAD - 24, 112),
     }
 
-    # Estados: "menu" -> "cartel" (NIVEL X) -> "jugando" -> "cartel" ... -> "ganaste"
-    #          y si se acaban las vidas -> "perdiste". En el versus: -> "fin_versus".
+    # Estados: "menu" -> "cartel" (cuenta regresiva) -> "jugando" -> "perdiste"
+    #          versus: "menu" -> "nombres" -> "cartel" -> "jugando" -> "fin_versus"
     estado = "menu"
-    juego = nueva_partida(1)
+    nombres = ["", ""]           # nombres del versus (se recuerdan para la revancha)
+    cual_nombre = 0              # qué nombre se está escribiendo
+    juego = nueva_partida(1, nombres, datos["record"])
     adornos = []                 # frutas que vuelan de fondo en el menú
     umbral = UMBRAL_BRILLO
     ver_mascara = False
@@ -402,32 +509,45 @@ def main():
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 corriendo = False
+            elif estado == "nombres":
+                # Mientras se escriben los nombres, el teclado es para escribir.
+                if evento.type == pygame.KEYDOWN and evento.key == pygame.K_ESCAPE:
+                    pygame.key.stop_text_input()
+                    estado = "menu"
+                elif evento.type in (pygame.KEYDOWN, pygame.TEXTINPUT):
+                    cual_nombre = escribir_nombre(nombres, cual_nombre, evento)
+                    if cual_nombre == 2:      # ya están los dos nombres: ¡a jugar!
+                        pygame.key.stop_text_input()
+                        juego = nueva_partida(2, nombres, datos["record"])
+                        estado = "cartel"
             elif evento.type == pygame.KEYDOWN:
-                puede_empezar = estado in ("menu", "ganaste", "perdiste", "fin_versus")
+                puede_empezar = estado in ("menu", "perdiste", "fin_versus")
                 if evento.key == pygame.K_ESCAPE:
                     corriendo = False
                 elif evento.key in (pygame.K_1, pygame.K_KP1) and puede_empezar:
-                    juego = nueva_partida(1)
+                    juego = nueva_partida(1, nombres, datos["record"])
                     estado = "cartel"
                 elif evento.key in (pygame.K_2, pygame.K_KP2) and puede_empezar:
-                    juego = nueva_partida(2)
-                    estado = "cartel"
+                    cual_nombre = 0
+                    estado = "nombres"
+                    pygame.key.start_text_input()   # ahora sí, las teclas escriben
                 elif evento.key == pygame.K_SPACE and puede_empezar:
-                    juego = nueva_partida(juego["modo"])   # mismo modo que la última vez
+                    # mismo modo que la última vez (en el versus, con los mismos nombres)
+                    juego = nueva_partida(juego["modo"], nombres, datos["record"])
                     estado = "cartel"
                 elif evento.key == pygame.K_f:
                     pygame.display.toggle_fullscreen()   # en ventana aparece la X para cerrar
                 elif evento.key == pygame.K_m:
                     ver_mascara = not ver_mascara
-                elif evento.unicode in ("+", "="):
+                elif evento.key in (pygame.K_PLUS, pygame.K_EQUALS, pygame.K_KP_PLUS):
                     umbral = min(UMBRAL_MAXIMO, umbral + PASO_UMBRAL)
-                elif evento.unicode in ("-", "_"):
+                elif evento.key in (pygame.K_MINUS, pygame.K_KP_MINUS):
                     umbral = max(UMBRAL_MINIMO, umbral - PASO_UMBRAL)
 
         # 2) CÁMARA: vision.py devuelve la posición de cada luz (x, y) o None.
         #    Cada jugador busca su luz solo en su zona de la pantalla.
         cuadro = vision.leer_cuadro(cap)
-        if estado == "menu":
+        if estado in ("menu", "nombres"):
             zonas = ZONAS_MENU
         else:
             zonas = [(jugador.x_min, jugador.x_max) for jugador in juego["jugadores"]]
@@ -443,6 +563,8 @@ def main():
                 estado = "jugando"
         elif estado == "jugando":
             estado = actualizar_partida(juego, luces, dt, sonidos)
+            if estado in ("perdiste", "fin_versus"):
+                terminar_partida(juego, datos)      # se guarda el resultado
 
         # 4) DIBUJAR
         if cuadro is not None:
@@ -467,7 +589,7 @@ def main():
             for luz in luces:   # en el menú se ve dónde está cada luz
                 graficos.dibujar_espada(capa_suave, capa_nitida, [], COLOR_RASTRO, luz)
         # las capas de brillo se SUMAN: el negro no cambia nada y los colores iluminan
-        # el resplandor se difumina y se agranda: queda suave, como luz de verdad
+        # (el resplandor se difumina y se agranda: queda suave, como luz de verdad)
         resplandor = graficos.difuminar(capa_suave, DESENFOQUE_BRILLO)
         resplandor = pygame.transform.smoothscale(resplandor, (ANCHO, ALTO))
         pantalla.blit(resplandor, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
@@ -480,7 +602,10 @@ def main():
         if estado == "menu":
             for fruta in adornos:
                 fruta.dibujar(pantalla)
-        dibujar_carteles(pantalla, estado, juego, fuentes, luces, umbral, tiempo)
+        if estado == "nombres":
+            dibujar_nombres(pantalla, fuentes, nombres, cual_nombre, tiempo)
+        else:
+            dibujar_carteles(pantalla, estado, juego, fuentes, luces, umbral, tiempo, datos)
 
         if ver_mascara and cuadro is not None:
             chica = vision.mascara_chica_rgb(cuadro, umbral, ANCHO // 4, ALTO // 4)

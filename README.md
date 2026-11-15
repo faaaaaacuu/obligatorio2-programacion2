@@ -37,15 +37,23 @@ y con **F** de nuevo se vuelve a pantalla completa. Se puede cambiar en `ajustes
 - Cortar una bomba resta una vida.
 - Dejar caer una fruta sin cortarla también resta una vida (las bombas se pueden dejar caer).
 - Para cortar hay que mover la luz: si se queda quieta encima de una fruta, no corta.
+- Hay **3 vidas** para toda la partida.
 - Al terminar, **ESPACIO** arranca otra partida del mismo modo sin cerrar la ventana
   (o **1** / **2** para cambiar de modo).
 
-### Modo 1 jugador
+### Modo 1 jugador: superar el récord
 
-**Se gana** pasando los 5 niveles. **Se pierde** si se terminan las vidas.
+La partida **no termina hasta que perdés las 3 vidas**. No hay metas en pantalla: la dificultad
+sube sola, sin avisar, cada 10 frutas cortadas. Las frutas salen más seguido, más rápido, más chicas
+y con más bombas (ver [Dificultad](#dificultad)).
+
+Al perder se muestra cuántas frutas cortaste y se compara con el **récord**. Si lo superaste,
+queda guardado como récord nuevo; si no, te dice cuántas te faltaron. Durante la partida, en el
+momento en que pasás el récord aparece **"¡NUEVO RÉCORD!"**. El objetivo es superarlo.
 
 ### Modo versus (2 jugadores)
 
+Antes de empezar, cada jugador **escribe su nombre** (ENTER para confirmar, ESC para volver).
 La pantalla se divide al medio: el **Jugador 1** juega en la mitad izquierda y el **Jugador 2**
 en la derecha, cada uno con la linterna de su celular. Cada mitad tiene sus propias vidas y
 puntos, y la cámara busca una luz distinta en cada mitad.
@@ -62,9 +70,12 @@ la bola se convierte en una bomba mortal que aparece en la mitad del rival. Si e
 **se queda sin vidas y pierde en el acto**. Cada jugador la puede usar **una sola vez** por partida,
 y tirarla **te deja con 1 vida**. Si el rival la esquiva, la partida sigue.
 
-- **Gana** el primero que corta 15 frutas.
-- Si un jugador se queda sin vidas, gana el otro.
-- Si pasan las dos cosas a la vez, es empate.
+- **Gana el que aguanta más**: pierde el primero que se queda sin vidas.
+- Si los dos se quedan sin vidas a la vez, es empate.
+- La dificultad sube sola para los dos cada 20 segundos.
+- Cada partida **se guarda** (fecha, nombres, frutas de cada uno y ganador). Al terminar se muestra
+  el historial entre esos dos jugadores (por ejemplo "Ana 3 - 1 Facu") y las últimas partidas.
+- **ESPACIO** es la revancha con los mismos nombres; **2** permite cambiarlos.
 
 Conviene que cada jugador se pare de su lado y no cruce la linterna a la mitad del otro.
 
@@ -74,21 +85,31 @@ para los dos, así nadie pierde vidas por eso).
 
 Funciona mejor en un cuarto con poca luz y sin lámparas o ventanas detrás del jugador.
 
-## Niveles (modo 1 jugador)
+## Dificultad
 
-Hay 5 niveles. En cada uno hay que cortar una cantidad de frutas para pasar al siguiente,
-y las vidas se recargan a 3 al empezar cada nivel.
+El juego es infinito, pero cada vez más difícil. Los primeros 5 niveles están armados a mano
+en la lista `NIVELES` de `ajustes.py`:
 
-| Nivel | Frutas para pasar | Frutas a la vez | Velocidad  | Bombas |
-|-------|-------------------|-----------------|------------|--------|
-| 1     | 8                 | 3               | muy lenta  | no     |
-| 2     | 10                | 3               | lenta      | 10 %   |
-| 3     | 12                | 4               | media      | 15 %   |
-| 4     | 14                | 5               | rápida     | 18 %   |
-| 5     | 16                | 6               | muy rápida | 22 %   |
+| Nivel | Frutas a la vez | Velocidad  | Bombas |
+|-------|-----------------|------------|--------|
+| 1     | 3               | muy lenta  | no     |
+| 2     | 3               | lenta      | 10 %   |
+| 3     | 4               | media      | 15 %   |
+| 4     | 5               | rápida     | 18 %   |
+| 5     | 6               | muy rápida | 22 %   |
 
-En cada nivel las frutas también son un poco más chicas.
-Los niveles se configuran en la lista `NIVELES` de `ajustes.py`, y las reglas del versus en `REGLAS_VERSUS`.
+Después del nivel 5, la función `reglas_de_nivel` (en `main.py`) hace cada nivel un poco más
+difícil que el anterior: más gravedad, menos espera entre frutas, frutas más chicas y más bombas.
+Tiene **topes** (`TOPE_...` en `ajustes.py`) para que nunca se vuelva imposible.
+
+Se sube de nivel cada 10 frutas jugando solo, y cada 20 segundos en el versus
+(`FRUTAS_POR_NIVEL` y `SEGUNDOS_POR_NIVEL`). Nunca aparece un cartel de "nivel": se nota en el juego.
+
+## Resultados guardados
+
+El récord y las partidas del versus se guardan en `resultados.json`, en la carpeta del juego
+(se crea solo la primera vez). Lo maneja `resultados.py`. Para borrar todo, alcanza con
+borrar ese archivo.
 
 ## Controles
 
@@ -113,6 +134,7 @@ La tecla **M** muestra un recuadro abajo a la derecha con lo que se está detect
 | `main.py`            | El bucle principal (eventos, actualizar, dibujar, `reloj.tick`) y los estados del juego |
 | `vision.py`          | Todo lo de OpenCV: abrir la cámara, leer el cuadro y detectar la luz      |
 | `objetos.py`         | Las clases `Fruta`, `BombaMortal`, `Pedazo`, `Particula`, `TextoFlotante` y `Jugador` |
+| `resultados.py`      | Lee y guarda el récord y el historial del versus (`resultados.json`)     |
 | `graficos.py`        | Funciones que dibujan las frutas, bombas, corazones, paneles y el brillo de la espada |
 | `ajustes.py`         | Constantes: colores, frutas de cada jugador, tamaños, velocidades, niveles y rangos de detección |
 | `sonidos/`           | Efectos de sonido (corte, bomba, caída, nivel, ganar, perder, lanzar y bomba mortal) |

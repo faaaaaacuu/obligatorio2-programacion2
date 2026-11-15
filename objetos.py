@@ -16,7 +16,7 @@ from ajustes import (ALTO, ALTURA_MINIMA, ALTURA_MAXIMA, VELOCIDAD_LATERAL,
                      GIRO_MAXIMO_POR_PASO, RADIO_BOLA, RADIO_BOMBA_MORTAL,
                      GRAVEDAD_BOMBA_MORTAL, VIDAS_AL_TIRAR_BOMBA, COLOR_BOMBA_MORTAL,
                      GOTAS_POR_CORTE, CHISPAS_POR_BOMBA, GRAVEDAD_PARTICULAS,
-                     BLANCO, NEGRO)
+                     BLANCO, NEGRO, ROJO)
 
 COLORES_EXPLOSION = [(255, 140, 30), (255, 220, 60), (255, 255, 255), (90, 90, 90)]
 COLORES_EXPLOSION_MORTAL = [COLOR_BOMBA_MORTAL, (230, 160, 255), (255, 255, 255)]
@@ -314,6 +314,7 @@ class Jugador:
         self.espera = 0.5           # la primera fruta sale enseguida
         self.sin_luz = 0.0          # cuánto hace que la cámara no ve su linterna
         self.mensaje = ""
+        self.mensaje_color = ROJO
         self.mensaje_tiempo = 0.0
         self.destello = 0.0
 
@@ -371,9 +372,11 @@ class Jugador:
         self.frutas.append(BombaMortal(self.x_min, self.x_max))
         self.mostrar_mensaje("¡CUIDADO!")
 
-    def mostrar_mensaje(self, texto):
+    def mostrar_mensaje(self, texto, color=ROJO, duracion=DURACION_MENSAJE):
+        """Muestra un cartel grande en la zona del jugador durante un ratito."""
         self.mensaje = texto
-        self.mensaje_tiempo = DURACION_MENSAJE
+        self.mensaje_color = color
+        self.mensaje_tiempo = duracion
 
     def actualizar(self, segmento, reglas, dt, sonidos):
         """Hace aparecer, mover, cortar y caer las frutas de este jugador."""
