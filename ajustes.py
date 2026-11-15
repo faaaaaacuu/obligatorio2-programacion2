@@ -23,7 +23,8 @@ UMBRAL_MAXIMO = 254
 PASO_UMBRAL = 5
 DESENFOQUE = 11            # tamaño del desenfoque (impar) para sacar ruido antes de detectar
 AREA_MINIMA_LUZ = 25       # área mínima (píxeles) de la mancha de luz, para ignorar reflejos chicos
-TOLERANCIA_SIN_LUZ = 0.6   # segundos sin ver la luz antes de pausar el juego
+TOLERANCIA_SIN_LUZ = 2.0   # segundos sin ver la luz antes de darla por perdida (aviso y pausa)
+HUECO_MAXIMO_CORTE = 0.2   # si la luz desaparece menos que esto, el corte sigue de donde estaba
 
 # --- Colores (R, G, B) ---
 BLANCO = (255, 255, 255)
@@ -36,7 +37,15 @@ GRIS = (150, 150, 160)
 VERDE_HOJA = (60, 170, 50)
 MARRON = (110, 70, 30)
 CONTORNO = (20, 15, 30)              # borde oscuro de frutas y bombas (estilo dibujo animado)
-COLOR_RASTRO = (190, 240, 255)       # rastro de la luz en el modo de 1 jugador
+# Filtro de color del punto de luz y su estela (1 jugador; se cambia con la tecla C)
+COLORES_ESPADA = [
+    ("Cian", (0, 220, 255)),
+    ("Verde", (60, 255, 90)),
+    ("Rosa", (255, 60, 200)),
+    ("Rojo", (255, 50, 50)),
+    ("Violeta", (170, 90, 255)),
+    ("Amarillo", (255, 220, 0)),
+]
 COLOR_JUGADOR_1 = (80, 200, 255)     # celeste (versus, mitad izquierda)
 COLOR_JUGADOR_2 = (255, 140, 40)     # naranja (versus, mitad derecha)
 COLOR_FONDO = (10, 10, 35)           # tinte azulado que oscurece la cámara

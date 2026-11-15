@@ -10,7 +10,7 @@ import pygame
 import graficos
 from ajustes import (ALTO, ALTURA_MINIMA, ALTURA_MAXIMA, VELOCIDAD_LATERAL,
                      VELOCIDAD_GIRO, SEPARACION_PEDAZOS, MARGEN_CORTE,
-                     VIDAS, TOLERANCIA_SIN_LUZ, MOVIMIENTO_MINIMO, LARGO_RASTRO,
+                     VIDAS, TOLERANCIA_SIN_LUZ, HUECO_MAXIMO_CORTE, MOVIMIENTO_MINIMO, LARGO_RASTRO,
                      DURACION_MENSAJE, DURACION_DESTELLO, DURACION_TEXTO_FLOTANTE,
                      VENTANA_CIRCULO, VUELTAS_PARA_BOMBA, MOVIMIENTO_MINIMO_GIRO,
                      GIRO_MAXIMO_POR_PASO, RADIO_BOLA, RADIO_BOMBA_MORTAL,
@@ -324,17 +324,29 @@ class Jugador:
 
     def mover_luz(self, luz, dt):
         """Guarda la nueva posición de la luz. Devuelve el segmento que recorrió
-        desde el cuadro anterior, o None si no hubo un movimiento que corte."""
-        self.luz = luz
+        desde el cuadro anterior, o None si no hubo un movimiento que corte.
+
+        Si la cámara no ve la luz, no se la da por perdida enseguida: durante
+        TOLERANCIA_SIN_LUZ segundos el punto se queda donde estaba y la estela
+        se va achicando. Recién después se considera que no hay linterna."""
         if luz is None:
             self.sin_luz += dt
-            self.luz_anterior = None
-            self.camino = []
             if self.rastro:
-                self.rastro.pop(0)      # el rastro se va borrando de a poco
+                self.rastro.pop(0)      # la estela se va borrando de a poco
+            if self.perdio_la_luz():
+                self.luz = None
+                self.luz_anterior = None
+                self.camino = []
             return None
 
+        hueco = self.sin_luz            # cuánto tiempo estuvo sin verse
         self.sin_luz = 0.0
+        self.luz = luz
+        if hueco > HUECO_MAXIMO_CORTE:
+            # desapareció un buen rato: empieza un trazo nuevo (no une los dos lugares)
+            self.luz_anterior = None
+            self.rastro = []
+            self.camino = []
         segmento = None
         if self.luz_anterior is not None:
             movimiento = abs(luz[0] - self.luz_anterior[0]) + abs(luz[1] - self.luz_anterior[1])

@@ -79,9 +79,15 @@ y tirarla **te deja con 1 vida**. Si el rival la esquiva, la partida sigue.
 
 Conviene que cada jugador se pare de su lado y no cruce la linterna a la mitad del otro.
 
-Si la cámara deja de ver una linterna, aparece el aviso "No veo la linterna" y, si pasa más de
-medio segundo, el juego se **pausa** hasta que la luz vuelva a aparecer (en el versus se pausa
-para los dos, así nadie pierde vidas por eso).
+Si la cámara deja de ver una linterna, no se la da por perdida enseguida: durante **2 segundos**
+el punto se queda quieto donde estaba y la estela se va borrando (así un corte muy rápido que la
+cámara no llegó a ver no corta el juego). Si pasan los 2 segundos, aparece el aviso
+**"No veo la linterna"** y el juego se **pausa** hasta que la luz vuelva (en el versus se pausa
+para los dos, así nadie pierde vidas por eso). Se cambia con `TOLERANCIA_SIN_LUZ` en `ajustes.py`.
+
+**Filtro de color:** el punto de luz y su estela se tiñen de un color. Jugando solo, la tecla **C**
+cambia entre cian, verde, rosa, rojo, violeta y amarillo (también en medio de la partida). En el
+versus cada jugador tiene el suyo: celeste a la izquierda y naranja a la derecha.
 
 Funciona mejor en un cuarto con poca luz y sin lámparas o ventanas detrás del jugador.
 
@@ -120,6 +126,7 @@ borrar ese archivo.
 | ESPACIO         | Volver a jugar el mismo modo                               |
 | + / -           | Subir / bajar el umbral de brillo de la detección          |
 | M               | Mostrar / ocultar lo que la cámara está tomando como "luz" |
+| C               | Cambiar el color de la luz y su estela (1 jugador)         |
 | F               | Pantalla completa / ventana                                |
 | ESC o la X      | Salir                                                      |
 

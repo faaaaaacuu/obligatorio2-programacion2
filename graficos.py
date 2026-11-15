@@ -313,18 +313,21 @@ def difuminar(sup, veces):
 
 
 def dibujar_espada(capa_suave, capa_nitida, puntos, color, luz):
-    """Dibuja la estela de la luz con brillo. Las dos capas se SUMAN a la
-    pantalla (BLEND_ADD): el negro no cambia nada y los colores "iluminan".
+    """Dibuja el punto de luz y su estela con brillo, teñidos del color elegido
+    (el "filtro de color"). Las dos capas se SUMAN a la pantalla (BLEND_ADD):
+    el negro no cambia nada y los colores "iluminan".
 
     - capa_suave es chiquita (un cuarto del tamaño): ahí va el brillo ancho.
       Después se agranda y queda borroso, como un resplandor.
-    - capa_nitida es del tamaño de la pantalla: ahí va el centro blanco."""
+    - capa_nitida es del tamaño de la pantalla: ahí va el centro, más claro
+      pero del mismo color."""
     f = capa_suave.get_width() / capa_nitida.get_width()   # 0.25
+    centro = mezclar(color, BLANCO, 0.35)                  # el centro: el color, un poco aclarado
     n = len(puntos)
-    for capa, escala, pasadas in ((capa_suave, f, ((4.0, 0.55),)),
-                                  (capa_nitida, 1, ((1.6, 0.6), (0.6, None)))):
+    for capa, escala, pasadas in ((capa_suave, f, ((4.0, 0.8),)),
+                                  (capa_nitida, 1, ((1.6, 0.75), (0.6, None)))):
         for factor, intensidad in pasadas:
-            tono = BLANCO if intensidad is None else mezclar(NEGRO, color, intensidad)
+            tono = centro if intensidad is None else mezclar(NEGRO, color, intensidad)
             for i in range(1, n):
                 t = i / (n - 1)                 # 0 = la parte vieja, 1 = la más nueva
                 grosor = max(1, int((2 + GROSOR_RASTRO * t) * factor * escala))
@@ -333,9 +336,9 @@ def dibujar_espada(capa_suave, capa_nitida, puntos, color, luz):
                 pygame.draw.line(capa, tono, a, b, grosor)
                 pygame.draw.circle(capa, tono, b, grosor / 2)
     if luz is not None:
-        pygame.draw.circle(capa_suave, mezclar(NEGRO, color, 0.7), (luz[0] * f, luz[1] * f), 32 * f)
-        pygame.draw.circle(capa_nitida, mezclar(NEGRO, color, 0.6), luz, 11)
-        pygame.draw.circle(capa_nitida, BLANCO, luz, 6)
+        pygame.draw.circle(capa_suave, mezclar(NEGRO, color, 0.9), (luz[0] * f, luz[1] * f), 36 * f)
+        pygame.draw.circle(capa_nitida, mezclar(NEGRO, color, 0.8), luz, 12)
+        pygame.draw.circle(capa_nitida, centro, luz, 7)
 
 
 # ---------------------------------------------------------------------------

@@ -18,6 +18,7 @@ Controles:
   ESPACIO  volver a jugar el mismo modo
   + / -    subir / bajar el umbral de brillo de la detección
   M        mostrar / ocultar lo que la cámara toma como "luz"
+  C        cambiar el color de la luz y su estela (1 jugador)
   F        pantalla completa / ventana
   ESC      salir (también se puede cerrar con la X de la ventana)
 """
@@ -78,11 +79,12 @@ def crear_capa(color):
 # Lógica de la partida
 # ---------------------------------------------------------------------------
 
-def nueva_partida(modo, nombres, record):
+def nueva_partida(modo, nombres, record, color):
     """Devuelve el estado inicial de una partida. modo 1 = un jugador, 2 = versus.
-    `nombres` son los nombres del versus y `record` el récord a superar."""
+    `nombres` son los nombres del versus, `record` el récord a superar y
+    `color` el filtro de color de la luz jugando solo."""
     if modo == 1:
-        jugadores = [Jugador("Vos", COLOR_RASTRO, 0, ANCHO, FRUTAS_JUGADOR_1 + FRUTAS_JUGADOR_2)]
+        jugadores = [Jugador("Vos", color, 0, ANCHO, FRUTAS_JUGADOR_1 + FRUTAS_JUGADOR_2)]
     else:
         # cada uno con sus frutas y con su bomba mortal
         jugadores = [Jugador(nombres[0], COLOR_JUGADOR_1, 0, MITAD, FRUTAS_JUGADOR_1, True),
@@ -317,9 +319,6 @@ def dibujar_hud(pantalla, juego, fuentes, paneles, corazones, destello):
         if jugador.mensaje_tiempo > 0:
             dibujar_texto(pantalla, jugador.mensaje, fuentes["grande"], jugador.mensaje_color,
                           (centro_zona, 170))
-        if jugador.luz is None and not esta_pausado(juego):
-            dibujar_texto(pantalla, "No veo la linterna", fuentes["media"], ROJO,
-                          (centro_zona, ALTO - 60))
 
 
 def dibujar_nombres(pantalla, fuentes, nombres, cual, tiempo):
@@ -344,7 +343,7 @@ def dibujar_nombres(pantalla, fuentes, nombres, cual, tiempo):
                   fuentes["media"], VERDE, (centro, 400))
 
 
-def dibujar_carteles(pantalla, estado, juego, fuentes, luces, umbral, tiempo, datos):
+def dibujar_carteles(pantalla, estado, juego, fuentes, hay_luz, umbral, tiempo, datos, color):
     """Escribe los textos que corresponden a cada estado (menú, cuenta regresiva, final)."""
     centro = ANCHO // 2
     medio = ALTO // 2
@@ -366,15 +365,18 @@ def dibujar_carteles(pantalla, estado, juego, fuentes, luces, umbral, tiempo, da
                       fuentes["media"], BLANCO, (centro, medio - 75))
         dibujar_texto(pantalla, "Esquivá las bombas y no dejes caer frutas",
                       fuentes["chica"], BLANCO, (centro, medio - 42))
-        if any(luz is not None for luz in luces):
-            dibujar_texto(pantalla, "Linterna detectada", fuentes["media"], VERDE, (centro, medio + 5))
+        if hay_luz:
+            dibujar_texto(pantalla, "Linterna detectada", fuentes["media"], VERDE, (centro, medio - 5))
         else:
-            dibujar_texto(pantalla, "No veo la linterna", fuentes["media"], ROJO, (centro, medio + 5))
-        dibujar_texto(pantalla, "1  =  un jugador", fuentes["grande"], AMARILLO, (centro, medio + 60))
-        dibujar_texto(pantalla, "2  =  versus", fuentes["grande"], AMARILLO, (centro, medio + 110))
+            dibujar_texto(pantalla, "No veo la linterna", fuentes["media"], ROJO, (centro, medio - 5))
+        nombre_color, tono = color
+        dibujar_texto(pantalla, f"C = color de la luz: {nombre_color}", fuentes["media"], tono,
+                      (centro, medio + 25))
+        dibujar_texto(pantalla, "1  =  un jugador", fuentes["grande"], AMARILLO, (centro, medio + 75))
+        dibujar_texto(pantalla, "2  =  versus", fuentes["grande"], AMARILLO, (centro, medio + 122))
         if datos["record"] > 0:
             dibujar_texto(pantalla, f"Récord: {datos['record']}", fuentes["media"], BLANCO,
-                          (centro, medio + 160))
+                          (centro, medio + 170))
         dibujar_texto(pantalla, f"Umbral de brillo: {umbral}   (+/- para ajustar, M para ver la luz)"
                       "   |   F = pantalla completa   |   ESC = salir",
                       fuentes["chica"], GRIS, (centro, ALTO - 20))
@@ -496,7 +498,9 @@ def main():
     estado = "menu"
     nombres = ["", ""]           # nombres del versus (se recuerdan para la revancha)
     cual_nombre = 0              # qué nombre se está escribiendo
-    juego = nueva_partida(1, nombres, datos["record"])
+    indice_color = 0             # filtro de color elegido (posición en COLORES_ESPADA)
+    sin_luz_menu = 0.0           # en el menú: segundos seguidos sin ver ninguna linterna
+    juego = nueva_partida(1, nombres, datos["record"], COLORES_ESPADA[indice_color][1])
     adornos = []                 # frutas que vuelan de fondo en el menú
     umbral = UMBRAL_BRILLO
     ver_mascara = False
@@ -518,14 +522,14 @@ def main():
                     cual_nombre = escribir_nombre(nombres, cual_nombre, evento)
                     if cual_nombre == 2:      # ya están los dos nombres: ¡a jugar!
                         pygame.key.stop_text_input()
-                        juego = nueva_partida(2, nombres, datos["record"])
+                        juego = nueva_partida(2, nombres, datos["record"], COLORES_ESPADA[indice_color][1])
                         estado = "cartel"
             elif evento.type == pygame.KEYDOWN:
                 puede_empezar = estado in ("menu", "perdiste", "fin_versus")
                 if evento.key == pygame.K_ESCAPE:
                     corriendo = False
                 elif evento.key in (pygame.K_1, pygame.K_KP1) and puede_empezar:
-                    juego = nueva_partida(1, nombres, datos["record"])
+                    juego = nueva_partida(1, nombres, datos["record"], COLORES_ESPADA[indice_color][1])
                     estado = "cartel"
                 elif evento.key in (pygame.K_2, pygame.K_KP2) and puede_empezar:
                     cual_nombre = 0
@@ -533,10 +537,16 @@ def main():
                     pygame.key.start_text_input()   # ahora sí, las teclas escriben
                 elif evento.key == pygame.K_SPACE and puede_empezar:
                     # mismo modo que la última vez (en el versus, con los mismos nombres)
-                    juego = nueva_partida(juego["modo"], nombres, datos["record"])
+                    juego = nueva_partida(juego["modo"], nombres, datos["record"],
+                                          COLORES_ESPADA[indice_color][1])
                     estado = "cartel"
                 elif evento.key == pygame.K_f:
                     pygame.display.toggle_fullscreen()   # en ventana aparece la X para cerrar
+                elif evento.key == pygame.K_c:
+                    # siguiente filtro de color (jugando solo, se aplica al instante)
+                    indice_color = (indice_color + 1) % len(COLORES_ESPADA)
+                    if juego["modo"] == 1:
+                        juego["jugadores"][0].color = COLORES_ESPADA[indice_color][1]
                 elif evento.key == pygame.K_m:
                     ver_mascara = not ver_mascara
                 elif evento.key in (pygame.K_PLUS, pygame.K_EQUALS, pygame.K_KP_PLUS):
@@ -555,6 +565,11 @@ def main():
 
         # 3) ACTUALIZAR
         tiempo += dt
+        # en el menú, la linterna también se da por perdida recién a los TOLERANCIA_SIN_LUZ segundos
+        if any(luz is not None for luz in luces):
+            sin_luz_menu = 0.0
+        else:
+            sin_luz_menu += dt
         if estado == "menu":
             adornos = actualizar_adornos(adornos, dt)
         elif estado == "cartel":
@@ -587,7 +602,7 @@ def main():
                 pygame.draw.line(capa_suave, (60, 60, 80), (MITAD // 4, 0), (MITAD // 4, ALTO // 4), 3)
         elif estado == "menu":
             for luz in luces:   # en el menú se ve dónde está cada luz
-                graficos.dibujar_espada(capa_suave, capa_nitida, [], COLOR_RASTRO, luz)
+                graficos.dibujar_espada(capa_suave, capa_nitida, [], COLORES_ESPADA[indice_color][1], luz)
         # las capas de brillo se SUMAN: el negro no cambia nada y los colores iluminan
         # (el resplandor se difumina y se agranda: queda suave, como luz de verdad)
         resplandor = graficos.difuminar(capa_suave, DESENFOQUE_BRILLO)
@@ -605,7 +620,8 @@ def main():
         if estado == "nombres":
             dibujar_nombres(pantalla, fuentes, nombres, cual_nombre, tiempo)
         else:
-            dibujar_carteles(pantalla, estado, juego, fuentes, luces, umbral, tiempo, datos)
+            dibujar_carteles(pantalla, estado, juego, fuentes, sin_luz_menu <= TOLERANCIA_SIN_LUZ,
+                             umbral, tiempo, datos, COLORES_ESPADA[indice_color])
 
         if ver_mascara and cuadro is not None:
             chica = vision.mascara_chica_rgb(cuadro, umbral, ANCHO // 4, ALTO // 4)
