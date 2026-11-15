@@ -9,6 +9,9 @@ ALTO = 540
 FPS = 30
 TITULO = "Corte de Luz"
 PANTALLA_COMPLETA = True   # el juego se agranda a toda la pantalla (tecla F para cambiar)
+# Fuentes que se prueban en orden (si no está ninguna, pygame usa la suya)
+FUENTE_TITULO = "arialblack,impact,arial"
+FUENTE = "verdana,arial"
 
 # --- Cámara y detección de la linterna ---
 INDICE_CAMARA = 0
@@ -30,12 +33,16 @@ VERDE = (70, 220, 50)
 ROJO = (230, 40, 40)
 GRIS_OSCURO = (25, 25, 25)
 GRIS = (150, 150, 160)
-VERDE_HOJA = (30, 130, 30)
+VERDE_HOJA = (60, 170, 50)
+MARRON = (110, 70, 30)
+CONTORNO = (20, 15, 30)              # borde oscuro de frutas y bombas (estilo dibujo animado)
 COLOR_RASTRO = (190, 240, 255)       # rastro de la luz en el modo de 1 jugador
 COLOR_JUGADOR_1 = (80, 200, 255)     # celeste (versus, mitad izquierda)
 COLOR_JUGADOR_2 = (255, 140, 40)     # naranja (versus, mitad derecha)
-CAPA_OSCURA = (10, 10, 35, 150)      # capa semitransparente sobre la cámara
-CAPA_CARTEL = (10, 10, 35, 210)      # más oscura, para los carteles
+COLOR_FONDO = (10, 10, 35)           # tinte azulado que oscurece la cámara
+OSCURIDAD_CENTRO = 130               # 0-255: cuánto se oscurece la cámara en el centro...
+OSCURIDAD_BORDE = 225                # ...y en los bordes (viñeta)
+CAPA_CARTEL = (10, 10, 35, 200)      # más oscura, para los carteles
 COLOR_BOMBA_MORTAL = (180, 70, 255)  # violeta
 
 # Cada jugador tiene sus propias frutas, así en el versus se distinguen de un vistazo.
@@ -63,7 +70,19 @@ DURACION_DESTELLO = 0.25   # segundos que la pantalla queda roja al cortar una b
 ALTURA_MINIMA = 0.65       # hasta dónde suben las frutas, como fracción del alto de la pantalla
 ALTURA_MAXIMA = 0.85
 VELOCIDAD_LATERAL = (15, 70)   # píxeles por segundo hacia el centro (mín, máx)
-GIRO_PEDAZOS = 130         # velocidad con la que se separan las dos mitades al cortar
+VELOCIDAD_GIRO = (40, 160) # grados por segundo que giran las frutas mientras vuelan
+SEPARACION_PEDAZOS = 130   # velocidad con la que se separan las dos mitades al cortar
+
+# --- Partículas (jugo y explosiones) ---
+GOTAS_POR_CORTE = 14
+CHISPAS_POR_BOMBA = 30
+GRAVEDAD_PARTICULAS = 700
+DURACION_TEXTO_FLOTANTE = 0.7   # segundos que se ve el "+1" que sube desde la fruta
+DESENFOQUE_BRILLO = 3      # cuánto se difumina el resplandor de la espada de luz
+
+# Frutas que vuelan de adorno por los costados del menú
+REGLAS_ADORNOS = {"radio": (30, 42), "gravedad": 130, "bombas": 0}
+ANCHO_ZONA_ADORNOS = 150
 
 # --- La espada de luz ---
 LARGO_RASTRO = 12          # cuántas posiciones de la luz se dibujan en el rastro

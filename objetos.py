@@ -1,22 +1,25 @@
 """Clases del juego: las frutas (y bombas), los pedazos que quedan al
-cortarlas, la bomba mortal del versus y el jugador (con su linterna, sus
-frutas, vidas y puntos)."""
+cortarlas, las partículas (jugo y explosiones), los textos que flotan, la
+bomba mortal del versus y el jugador (con su linterna, frutas, vidas y puntos)."""
 
 import math
 import random
 
 import pygame
 
+import graficos
 from ajustes import (ALTO, ALTURA_MINIMA, ALTURA_MAXIMA, VELOCIDAD_LATERAL,
-                     GIRO_PEDAZOS, MARGEN_CORTE,
+                     VELOCIDAD_GIRO, SEPARACION_PEDAZOS, MARGEN_CORTE,
                      VIDAS, TOLERANCIA_SIN_LUZ, MOVIMIENTO_MINIMO, LARGO_RASTRO,
-                     GROSOR_RASTRO, RADIO_LUZ, DURACION_MENSAJE, DURACION_DESTELLO,
+                     DURACION_MENSAJE, DURACION_DESTELLO, DURACION_TEXTO_FLOTANTE,
                      VENTANA_CIRCULO, VUELTAS_PARA_BOMBA, MOVIMIENTO_MINIMO_GIRO,
                      GIRO_MAXIMO_POR_PASO, RADIO_BOLA, RADIO_BOMBA_MORTAL,
                      GRAVEDAD_BOMBA_MORTAL, VIDAS_AL_TIRAR_BOMBA, COLOR_BOMBA_MORTAL,
-                     BLANCO, ROJO, AMARILLO, GRIS_OSCURO, VERDE_HOJA)
+                     GOTAS_POR_CORTE, CHISPAS_POR_BOMBA, GRAVEDAD_PARTICULAS,
+                     BLANCO, NEGRO)
 
-MARRON = (110, 70, 30)
+COLORES_EXPLOSION = [(255, 140, 30), (255, 220, 60), (255, 255, 255), (90, 90, 90)]
+COLORES_EXPLOSION_MORTAL = [COLOR_BOMBA_MORTAL, (230, 160, 255), (255, 255, 255)]
 
 
 def distancia_punto_segmento(punto, inicio, fin):
@@ -80,8 +83,20 @@ def centro_de(puntos):
     return (int(x), int(y))
 
 
+def salpicar(x, y, colores, cantidad, velocidad, radio):
+    """Devuelve una lista de partículas que salen disparadas desde (x, y)."""
+    return [Particula(x, y, random.choice(colores), velocidad, radio) for _ in range(cantidad)]
+
+
+def pegar_centrado(pantalla, imagen, x, y, angulo=0):
+    """Gira la imagen `angulo` grados y la pega con su centro en (x, y)."""
+    if angulo:
+        imagen = pygame.transform.rotozoom(imagen, angulo, 1)
+    pantalla.blit(imagen, imagen.get_rect(center=(int(x), int(y))))
+
+
 class Fruta:
-    """Una fruta (o una bomba) que sale desde abajo, sube y vuelve a caer.
+    """Una fruta (o una bomba) que sale desde abajo, sube girando y vuelve a caer.
     Aparece entre x_min y x_max (la zona del jugador al que le toca) y es
     de alguno de los tipos de `frutas` (cada jugador tiene las suyas)."""
 
@@ -95,6 +110,14 @@ class Fruta:
         self.bomba = random.random() < reglas["bombas"]
         self.mortal = False         # solo la BombaMortal lo tiene en True
         self.tipo = random.choice(frutas)
+        self.angulo = random.uniform(0, 360)
+        if self.bomba:
+            self.angulo = 0
+            self.giro = 0           # las bombas no giran, así la mecha queda arriba
+            self.imagen = graficos.crear_imagen_bomba(self.radio)
+        else:
+            self.giro = random.uniform(*VELOCIDAD_GIRO) * random.choice((-1, 1))
+            self.imagen = graficos.crear_imagen_fruta(self.tipo, self.radio)
         self.lanzar(x_min, x_max)
 
     def lanzar(self, x_min, x_max):
@@ -113,6 +136,7 @@ class Fruta:
         self.vy += self.gravedad * dt
         self.x += self.vx * dt
         self.y += self.vy * dt
+        self.angulo += self.giro * dt
 
     def se_cayo(self):
         """Devuelve True si ya bajó y salió por abajo de la pantalla."""
@@ -123,68 +147,29 @@ class Fruta:
         distancia = distancia_punto_segmento((self.x, self.y), inicio, fin)
         return distancia < self.radio + MARGEN_CORTE
 
-    def partir(self):
-        """Devuelve las dos mitades de la fruta, que salen cada una para su lado."""
-        return [Pedazo(self, -1), Pedazo(self, 1)]
+    def partir(self, inicio, fin):
+        """Devuelve las dos mitades de la fruta. El corte sigue la dirección en
+        la que se movió la luz, y cada mitad sale para su lado."""
+        dx, dy = fin[0] - inicio[0], fin[1] - inicio[1]
+        # Ángulo para que la línea del corte quede paralela al movimiento de la luz
+        angulo = math.degrees(math.atan2(dx, dy))
+        return [Pedazo(self, -1, angulo), Pedazo(self, 1, angulo)]
+
+    def explotar(self):
+        """Devuelve las partículas de la explosión (bomba) o del jugo (fruta)."""
+        if self.mortal:
+            return salpicar(self.x, self.y, COLORES_EXPLOSION_MORTAL, CHISPAS_POR_BOMBA * 2,
+                            (100, 500), (4, 10))
+        if self.bomba:
+            return salpicar(self.x, self.y, COLORES_EXPLOSION, CHISPAS_POR_BOMBA, (100, 420), (3, 9))
+        colores = [self.tipo["pulpa"], self.tipo["color"]]
+        return salpicar(self.x, self.y, colores, GOTAS_POR_CORTE, (80, 280), (3, 7))
 
     def dibujar(self, pantalla):
-        x, y, r = int(self.x), int(self.y), self.radio
+        pegar_centrado(pantalla, self.imagen, self.x, self.y, self.angulo)
         if self.bomba:
-            pygame.draw.circle(pantalla, GRIS_OSCURO, (x, y), r)
-            pygame.draw.circle(pantalla, BLANCO, (x, y), r, 2)
-            cruz = r // 3
-            pygame.draw.line(pantalla, ROJO, (x - cruz, y - cruz), (x + cruz, y + cruz), 6)
-            pygame.draw.line(pantalla, ROJO, (x + cruz, y - cruz), (x - cruz, y + cruz), 6)
-            mecha = (x + 18, y - r - 14)
-            pygame.draw.line(pantalla, AMARILLO, (x + 6, y - r + 2), mecha, 4)
-            pygame.draw.circle(pantalla, AMARILLO, mecha, 5)
-            return
-
-        tipo = self.tipo["tipo"]
-        color = self.tipo["color"]
-        oscuro = tuple(c * 2 // 3 for c in color)
-
-        if tipo == "uva":
-            # racimo de 6 uvitas
-            u = int(r * 0.4)
-            for dx, dy in ((-1.6, -1.2), (0, -1.2), (1.6, -1.2), (-0.8, 0.3), (0.8, 0.3), (0, 1.8)):
-                centro = (x + int(dx * u), y + int(dy * u))
-                pygame.draw.circle(pantalla, color, centro, u)
-                pygame.draw.circle(pantalla, BLANCO, centro, u, 1)
-            pygame.draw.line(pantalla, MARRON, (x, y - int(2.2 * u)), (x + 4, y - r - 4), 4)
-            return
-
-        if tipo == "limon":
-            # más ancho que alto, con dos puntitas
-            rect = pygame.Rect(0, 0, 2 * r, int(1.5 * r))
-            rect.center = (x, y)
-            pygame.draw.circle(pantalla, color, (x - r, y), r // 5)
-            pygame.draw.circle(pantalla, color, (x + r, y), r // 5)
-            pygame.draw.ellipse(pantalla, color, rect)
-            pygame.draw.ellipse(pantalla, BLANCO, rect, 2)
-        else:
-            pygame.draw.circle(pantalla, color, (x, y), r)
-            if tipo == "sandia":
-                # rayas verde oscuro
-                for ancho in (0.35, 0.75):
-                    rayas = pygame.Rect(0, 0, int(2 * r * ancho), 2 * r)
-                    rayas.center = (x, y)
-                    pygame.draw.ellipse(pantalla, oscuro, rayas, 4)
-            elif tipo in ("naranja", "kiwi"):
-                # puntitos en la cáscara
-                for dx, dy in ((-0.4, 0.1), (0.3, 0.4), (0.1, -0.3), (-0.2, 0.55), (0.55, -0.1)):
-                    pygame.draw.circle(pantalla, oscuro, (x + int(dx * r), y + int(dy * r)), 3)
-            pygame.draw.circle(pantalla, BLANCO, (x, y), r, 2)
-
-        if tipo != "kiwi":
-            brillo = pygame.Rect(0, 0, r // 2, r // 3)
-            brillo.center = (x - r // 3, y - r // 3)
-            pygame.draw.ellipse(pantalla, BLANCO, brillo)
-        if tipo in ("manzana", "naranja", "limon"):
-            pygame.draw.line(pantalla, MARRON, (x, y - r + 4), (x + 3, y - r - 8), 3)
-            hoja = pygame.Rect(0, 0, r // 2, r // 4)
-            hoja.center = (x + r // 4, y - r - 4)
-            pygame.draw.ellipse(pantalla, VERDE_HOJA, hoja)
+            mx, my = graficos.punta_de_mecha(self.radio)
+            graficos.dibujar_chispa(pantalla, self.x + mx, self.y + my)
 
 
 class BombaMortal(Fruta):
@@ -196,56 +181,103 @@ class BombaMortal(Fruta):
                   "gravedad": GRAVEDAD_BOMBA_MORTAL, "bombas": 1}
         super().__init__(reglas, x_min, x_max, [None])
         self.mortal = True
-        self.tiempo = 0.0           # para que titile
+        self.imagen = graficos.crear_imagen_bomba(self.radio, mortal=True)
+        self.halo = graficos.crear_halo(self.radio * 2, COLOR_BOMBA_MORTAL)
+        self.tiempo = 0.0           # para que el halo "lata"
 
     def actualizar(self, dt):
         super().actualizar(dt)
         self.tiempo += dt
 
     def dibujar(self, pantalla):
-        x, y, r = int(self.x), int(self.y), self.radio
-        latido = int(6 * abs(math.sin(self.tiempo * 6)))
-        pygame.draw.circle(pantalla, COLOR_BOMBA_MORTAL, (x, y), r + 6 + latido, 4)
-        pygame.draw.circle(pantalla, (40, 0, 60), (x, y), r)
-        pygame.draw.circle(pantalla, COLOR_BOMBA_MORTAL, (x, y), r // 2 + latido)
-        pygame.draw.circle(pantalla, BLANCO, (x, y), r, 2)
-        mecha = (x + 20, y - r - 16)
-        pygame.draw.line(pantalla, AMARILLO, (x + 6, y - r + 2), mecha, 4)
-        pygame.draw.circle(pantalla, ROJO if latido > 3 else AMARILLO, mecha, 6)
+        self.halo.set_alpha(int(155 + 100 * math.sin(self.tiempo * 7)))
+        pegar_centrado(pantalla, self.halo, self.x, self.y)
+        super().dibujar(pantalla)
 
 
 class Pedazo:
-    """Media fruta que sale volando y cae después de un corte."""
+    """Media fruta que sale volando, girando, después de un corte."""
 
-    def __init__(self, fruta, lado):
+    def __init__(self, fruta, lado, angulo):
         self.x = fruta.x
         self.y = fruta.y
         self.radio = fruta.radio
-        self.color = fruta.tipo["color"]
-        self.pulpa = fruta.tipo["pulpa"]
         self.gravedad = fruta.gravedad
-        self.lado = lado                    # -1 = mitad izquierda, 1 = mitad derecha
-        self.vx = fruta.vx + GIRO_PEDAZOS * lado
-        self.vy = min(fruta.vy, 0) - 40     # saltan un poquito para arriba
+        self.imagen = graficos.crear_imagen_mitad(fruta.tipo, fruta.radio, lado)
+        self.angulo = angulo
+        self.giro = random.uniform(60, 180) * lado
+        # Cada mitad se aleja del corte hacia su lado (perpendicular al corte).
+        a = math.radians(angulo)
+        self.vx = fruta.vx + SEPARACION_PEDAZOS * lado * math.cos(a)
+        self.vy = min(fruta.vy, 0) - 40 - SEPARACION_PEDAZOS * lado * math.sin(a)
 
     def actualizar(self, dt):
         self.vy += self.gravedad * dt
         self.x += self.vx * dt
         self.y += self.vy * dt
+        self.angulo += self.giro * dt
 
     def fuera_de_pantalla(self):
         """Devuelve True cuando el pedazo ya cayó por abajo."""
         return self.y - self.radio > ALTO
 
     def dibujar(self, pantalla):
-        centro = (int(self.x), int(self.y))
-        izquierda = self.lado < 0
-        # pygame puede dibujar solo algunos cuartos del círculo: así queda media fruta.
-        # Primero la cáscara y encima, un poco más chica, la pulpa.
-        for color, radio in ((self.color, self.radio), (self.pulpa, self.radio - 5)):
-            pygame.draw.circle(pantalla, color, centro, radio,
-                               draw_top_left=izquierda, draw_bottom_left=izquierda,
-                               draw_top_right=not izquierda, draw_bottom_right=not izquierda)
+        pegar_centrado(pantalla, self.imagen, self.x, self.y, self.angulo)
+
+
+class Particula:
+    """Una gotita de jugo o una chispa de explosión: sale disparada, cae y se achica."""
+
+    def __init__(self, x, y, color, velocidad, radio):
+        angulo = random.uniform(0, 2 * math.pi)
+        rapidez = random.uniform(*velocidad)
+        self.x, self.y = x, y
+        self.vx = math.cos(angulo) * rapidez
+        self.vy = math.sin(angulo) * rapidez - 120     # un poco hacia arriba
+        self.color = color
+        self.radio = random.uniform(*radio)
+        self.vida = random.uniform(0.4, 0.9)           # segundos que dura
+        self.edad = 0.0
+
+    def actualizar(self, dt):
+        self.vy += GRAVEDAD_PARTICULAS * dt
+        self.x += self.vx * dt
+        self.y += self.vy * dt
+        self.edad += dt
+
+    def viva(self):
+        """Devuelve True mientras no se terminó su tiempo de vida."""
+        return self.edad < self.vida
+
+    def dibujar(self, pantalla):
+        radio = self.radio * (1 - self.edad / self.vida)   # se va achicando
+        if radio >= 1:
+            pygame.draw.circle(pantalla, self.color, (int(self.x), int(self.y)), radio)
+
+
+class TextoFlotante:
+    """Un texto (como "+1") que sube desde la fruta cortada y se desvanece."""
+
+    def __init__(self, x, y, texto, color):
+        self.x, self.y = x, y
+        self.texto = texto
+        self.color = color
+        self.edad = 0.0
+
+    def actualizar(self, dt):
+        self.y -= 70 * dt
+        self.edad += dt
+
+    def viva(self):
+        """Devuelve True mientras se tiene que seguir viendo."""
+        return self.edad < DURACION_TEXTO_FLOTANTE
+
+    def dibujar(self, pantalla, fuente):
+        transparencia = int(255 * (1 - self.edad / DURACION_TEXTO_FLOTANTE))
+        for color, corrida in ((NEGRO, 2), (self.color, 0)):
+            imagen = fuente.render(self.texto, True, color)
+            imagen.set_alpha(transparencia)
+            pantalla.blit(imagen, imagen.get_rect(center=(int(self.x) + corrida, int(self.y) + corrida)))
 
 
 class Jugador:
@@ -255,12 +287,13 @@ class Jugador:
 
     def __init__(self, nombre, color, x_min, x_max, frutas, con_bomba=False):
         self.nombre = nombre
-        self.color = color          # color de su rastro de luz y de su texto
+        self.color = color          # color de su espada de luz y de su texto
         self.x_min = x_min
         self.x_max = x_max
         self.tipos_de_fruta = frutas
         self.con_bomba = con_bomba  # la bomba mortal existe solo en el versus
         self.bomba_usada = False    # se puede usar una sola vez por partida
+        self.halo_bola = graficos.crear_halo(RADIO_BOLA * 2, COLOR_BOMBA_MORTAL)
         self.puntos = 0
         self.reiniciar()
 
@@ -268,6 +301,8 @@ class Jugador:
         """Deja todo listo para empezar un nivel (los puntos se mantienen)."""
         self.frutas = []
         self.pedazos = []
+        self.particulas = []
+        self.textos = []
         self.rastro = []
         self.camino = []            # posiciones recientes, para ver si gira en círculos
         self.carga = 0.0            # cuánto de la bola está cargado (0 a 1)
@@ -324,6 +359,8 @@ class Jugador:
             return False
         self.bomba_usada = True
         self.vidas = min(self.vidas, VIDAS_AL_TIRAR_BOMBA)   # tirarla te deja con 1 vida
+        self.particulas.extend(salpicar(self.centro_carga[0], self.centro_carga[1],
+                                        COLORES_EXPLOSION_MORTAL, 25, (100, 350), (3, 8)))
         self.camino = []
         self.carga = 0.0
         self.mostrar_mensaje("¡BOMBA LANZADA!")
@@ -354,21 +391,22 @@ class Jugador:
         for fruta in self.frutas:
             fruta.actualizar(dt)
             if segmento is not None and fruta.fue_cortada(*segmento):
-                self.destello = DURACION_DESTELLO
+                self.particulas.extend(fruta.explotar())
                 if fruta.mortal:
                     self.vidas = 0          # la bomba mortal te deja sin vidas
+                    self.destello = DURACION_DESTELLO * 3
                     self.mostrar_mensaje("¡BOMBA MORTAL!")
                     sonidos["mortal"].play()
                 elif fruta.bomba:
                     self.vidas -= 1
+                    self.destello = DURACION_DESTELLO
                     self.mostrar_mensaje("¡BOMBA!")
                     sonidos["bomba"].play()
                 else:
-                    self.destello = 0
                     self.puntos += 1
                     self.cortadas += 1
-                    self.pedazos.extend(fruta.partir())
-                    self.mostrar_mensaje("+1")
+                    self.pedazos.extend(fruta.partir(*segmento))
+                    self.textos.append(TextoFlotante(fruta.x, fruta.y - fruta.radio, "+1", self.color))
                     sonidos["corte"].play()
             elif fruta.se_cayo():
                 if not fruta.bomba:     # dejar caer una bomba está bien
@@ -379,23 +417,37 @@ class Jugador:
                 quedan.append(fruta)
         self.frutas = quedan
 
-        for pedazo in self.pedazos:
-            pedazo.actualizar(dt)
+        # Pedazos, partículas y textos: se mueven y se borran cuando terminan.
+        for cosa in self.pedazos + self.particulas + self.textos:
+            cosa.actualizar(dt)
         self.pedazos = [p for p in self.pedazos if not p.fuera_de_pantalla()]
+        self.particulas = [p for p in self.particulas if p.viva()]
+        self.textos = [t for t in self.textos if t.viva()]
 
-    def dibujar(self, pantalla):
-        """Dibuja sus frutas, los pedazos, la bola si la está cargando y la
-        estela de la luz (más gruesa cuanto más nueva)."""
-        for fruta in self.frutas:
-            fruta.dibujar(pantalla)
+    def dibujar(self, pantalla, fuente):
+        """Dibuja sus frutas, los pedazos, el jugo, la bola si la está cargando
+        y los "+1". (La espada de luz se dibuja aparte, en dibujar_brillo.)"""
         for pedazo in self.pedazos:
             pedazo.dibujar(pantalla)
+        for fruta in self.frutas:
+            fruta.dibujar(pantalla)
+        for particula in self.particulas:
+            particula.dibujar(pantalla)
         if self.carga > 0.5 and self.centro_carga is not None:
+            x, y = self.centro_carga
             radio = int(8 + RADIO_BOLA * self.carga)
-            pygame.draw.circle(pantalla, COLOR_BOMBA_MORTAL, self.centro_carga, radio)
-            pygame.draw.circle(pantalla, BLANCO, self.centro_carga, radio, 2)
-        for i in range(1, len(self.rastro)):
-            grosor = max(2, GROSOR_RASTRO * i // len(self.rastro))
-            pygame.draw.line(pantalla, self.color, self.rastro[i - 1], self.rastro[i], grosor)
-        if self.luz is not None:
-            pygame.draw.circle(pantalla, AMARILLO, self.luz, RADIO_LUZ, 3)
+            halo = pygame.transform.smoothscale(self.halo_bola, (radio * 4, radio * 4))
+            pegar_centrado(pantalla, halo, x, y)
+            pygame.draw.circle(pantalla, NEGRO, (x, y), radio + 2)
+            graficos.ovalo_con_volumen(pantalla, (x, y), radio * 2, radio * 2, COLOR_BOMBA_MORTAL, 6)
+            # anillo que muestra cuánto falta para completarla
+            anillo = pygame.Rect(0, 0, radio * 2 + 18, radio * 2 + 18)
+            anillo.center = (x, y)
+            pygame.draw.arc(pantalla, BLANCO, anillo, math.pi / 2,
+                            math.pi / 2 + 2 * math.pi * self.carga, 4)
+        for texto in self.textos:
+            texto.dibujar(pantalla, fuente)
+
+    def dibujar_brillo(self, capa_suave, capa_nitida):
+        """Dibuja la espada de luz en las capas de brillo (se suman a la pantalla)."""
+        graficos.dibujar_espada(capa_suave, capa_nitida, self.rastro, self.color, self.luz)

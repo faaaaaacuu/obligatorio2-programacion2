@@ -112,7 +112,8 @@ La tecla **M** muestra un recuadro abajo a la derecha con lo que se está detect
 |----------------------|---------------------------------------------------------------------------|
 | `main.py`            | El bucle principal (eventos, actualizar, dibujar, `reloj.tick`) y los estados del juego |
 | `vision.py`          | Todo lo de OpenCV: abrir la cámara, leer el cuadro y detectar la luz      |
-| `objetos.py`         | Las clases `Fruta`, `BombaMortal`, `Pedazo` y `Jugador` (frutas, rastro, vidas y puntos de cada jugador) |
+| `objetos.py`         | Las clases `Fruta`, `BombaMortal`, `Pedazo`, `Particula`, `TextoFlotante` y `Jugador` |
+| `graficos.py`        | Funciones que dibujan las frutas, bombas, corazones, paneles y el brillo de la espada |
 | `ajustes.py`         | Constantes: colores, frutas de cada jugador, tamaños, velocidades, niveles y rangos de detección |
 | `sonidos/`           | Efectos de sonido (corte, bomba, caída, nivel, ganar, perder, lanzar y bomba mortal) |
 | `generar_sonidos.py` | Script que generó los `.wav` (no hace falta correrlo para jugar)          |
@@ -141,3 +142,17 @@ se mueve de un cuadro al siguiente. Al dibujar un círculo, esa dirección dobla
 siempre para el mismo lado: después de una vuelta dobló 360°. Al cortar, en cambio, la luz va y
 vuelve, y eso es un giro brusco (más de 60° de golpe) que vuelve la cuenta a cero. Así un corte
 normal no carga la bomba sin querer.
+
+## Gráficos
+
+No se usan imágenes de archivos: todo se dibuja con pygame en `graficos.py`.
+
+- **Frutas con volumen:** cada fruta es una pila de óvalos, cada uno más chico, más claro y corrido
+  hacia arriba a la izquierda, lo que da sensación de esfera. La imagen se arma una sola vez cuando
+  la fruta aparece y después solo se gira (`rotozoom`).
+- **Bordes suaves:** las imágenes se dibujan al doble de tamaño y se achican con `smoothscale`.
+- **Corte:** la fruta se parte en la dirección en que se movió la luz, se ve el interior
+  (gajos, semillas) y salta jugo (`Particula`).
+- **Espada de luz:** se dibuja en dos capas que se **suman** a la pantalla (`BLEND_RGB_ADD`).
+  Una capa chica se difumina y se agranda para el resplandor, y otra nítida lleva el centro blanco.
+- **Fondo:** la cámara se oscurece más en los bordes (viñeta), así la atención va al centro.
