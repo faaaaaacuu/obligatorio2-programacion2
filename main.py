@@ -43,7 +43,7 @@ from objetos import Jugador
 
 CARPETA = os.path.dirname(os.path.abspath(__file__))
 NOMBRES_SONIDOS = ("corte", "bomba", "caida", "nivel", "ganar", "perder", "lanzar", "mortal", "vida", "sello",
-                   "espadazo")
+                   "espadazo", "cuenta_3", "cuenta_2", "cuenta_1", "comienzo")
 MITAD = ANCHO // 2
 # En el menú todavía no hay modo elegido: se busca una luz en cada mitad.
 ZONAS_MENU = [(0, MITAD), (MITAD, ANCHO)]
@@ -115,6 +115,7 @@ def nueva_partida(modo, nombres, record, color):
         "modo": modo,
         "jugadores": jugadores,
         "cartel": DURACION_CARTEL,  # cuenta regresiva antes de empezar
+        "numero_cuenta": None,      # el último número de la cuenta regresiva que sonó
         "tiempo": 0.0,              # segundos jugados (sin contar las pausas)
         "record": record,           # el récord que había al empezar
         "supero_record": False,     # ya pasó el récord durante la partida
@@ -596,8 +597,15 @@ def main():
             if tiempo_intro >= DURACION_INTRO:
                 estado = "menu"
         elif estado == "cartel":
+            # cuenta regresiva: un sonido con cada número; el 3 y el 2 parecidos,
+            # el 1 el más épico...
+            numero = math.ceil(juego["cartel"])
+            if numero != juego["numero_cuenta"]:
+                juego["numero_cuenta"] = numero
+                sonidos[f"cuenta_{min(numero, 3)}"].play()
             juego["cartel"] -= dt
             if juego["cartel"] <= 0:
+                sonidos["comienzo"].play()        # ...y taiko con gong al arrancar
                 estado = "jugando"
         elif estado == "jugando":
             estado = actualizar_partida(juego, luces, dt, sonidos)

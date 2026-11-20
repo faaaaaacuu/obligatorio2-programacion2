@@ -299,6 +299,24 @@ def palillos(fuerza=1.0):
     return muestras
 
 
+def gong(duracion=3.0):
+    """Un gong: frecuencias graves que no son múltiplos entre sí y tardan en
+    apagarse, con un leve "uaaa" (la afinación baja un poquito al principio)."""
+    parciales = [(98, 1.0, 1.6), (147.5, 0.7, 1.2), (205, 0.5, 1.0), (261, 0.35, 0.8),
+                 (333, 0.25, 0.6), (420, 0.15, 0.5)]
+    fases = [0.0] * len(parciales)
+    muestras = []
+    for i in range(int(MUESTRAS_POR_SEGUNDO * duracion)):
+        t = i / MUESTRAS_POR_SEGUNDO
+        curva = 1 + 0.012 * math.exp(-t / 0.3)
+        valor = 0.0
+        for k, (f, v, d) in enumerate(parciales):
+            fases[k] += 2 * math.pi * f * curva / MUESTRAS_POR_SEGUNDO
+            valor += v * math.sin(fases[k]) * math.exp(-t / d)
+        muestras.append(valor * min(1.0, t / 0.02))
+    return muestras
+
+
 def vecina(nota, pasos):
     """Devuelve la nota que está `pasos` lugares más arriba (o abajo, si es
     negativo) en la escala."""
@@ -555,6 +573,29 @@ def componer_musica_epica(intensidad):
     return normalizar(loop, 0.85)
 
 
+def cuenta_regresiva(numero):
+    """El sonido de cada número de la cuenta regresiva. El 3 y el 2: palillos con
+    un taiko chico (el 2 un poco más agudo, para que suba la tensión). El 1, el
+    más épico: un o-daiko grande y un silbido que crece hasta el arranque."""
+    azar = random.Random(10 + numero)
+    if numero >= 2:
+        tambor = taiko(1.0, azar, tono=1.0 if numero == 3 else 1.3, caida=0.25, duracion=0.7)
+        golpe = juntar(palillos(0.8), [m * 0.7 for m in tambor], 0)
+        return normalizar(desvanecer_final(sacar_silencio_final(reverb(golpe, 1.0, 0.3))), 0.65)
+    tambor = taiko(1.0, azar, tono=0.7, caida=0.8, duracion=1.6)
+    subida = normalizar(silbido(1.0, 300, 3500, 3200, pico=0.95, semilla=11), 0.45)
+    golpe = juntar(juntar(tambor, palillos(1.0), 0), subida, 0.05)
+    return normalizar(desvanecer_final(sacar_silencio_final(reverb(golpe, 1.5, 0.35))), 0.9)
+
+
+def comienzo():
+    """El arranque de la partida: o-daiko, gong y un acorde de cuerdas que crece."""
+    azar = random.Random(5)
+    golpe = juntar(taiko(1.0, azar, tono=0.72, caida=0.9, duracion=1.8), [m * 0.6 for m in gong(3.0)], 0)
+    golpe = juntar(golpe, [m * 0.35 for m in cuerdas([NOTAS[n] for n in ACORDES["D3"]] + [NOTAS["D4"]], 2.6, azar)], 0)
+    return normalizar(desvanecer_final(sacar_silencio_final(reverb(golpe, 2.0, 0.3))), 0.9)
+
+
 def guardar(nombre, muestras):
     ruta = os.path.join(CARPETA, nombre + ".wav")
     with wave.open(ruta, "w") as archivo:
@@ -583,4 +624,7 @@ if __name__ == "__main__":
     guardar("musica_menu", componer_musica(0))              # la tranquila: menú, intro y finales
     for intensidad in range(len(TEMPOS_EPICOS)):             # las épicas: durante la partida
         guardar(f"musica_{intensidad}", componer_musica_epica(intensidad))
+    for numero in (3, 2, 1):
+        guardar(f"cuenta_{numero}", cuenta_regresiva(numero))
+    guardar("comienzo", comienzo())
     print("Sonidos generados en", CARPETA)

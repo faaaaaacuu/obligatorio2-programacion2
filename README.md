@@ -244,5 +244,8 @@ están incluidos). Es todo original: no usa grabaciones ni canciones de nadie.
   | 4 | 138 | 8 | coro siempre, carreritas de koto, shime en semicorcheas, redobles |
 
   Se pasa de una a otra con un fundido (`musica.py`), sin cortar el juego.
+- **Cuenta regresiva:** el **3** y el **2** son palillos de madera (*hyoshigi*) con un taiko chico
+  (el 2 un poco más agudo, para que suba la tensión); el **1** es el más épico: un o-daiko grande con
+  un silbido que crece hasta el arranque. Al empezar: o-daiko, gong y un acorde de cuerdas.
 - **Cortes de katana:** un silbido de aire (ruido filtrado que sube y baja) más el brillo metálico de
   la hoja, con reverb para que quede sonando hasta apagarse.
