@@ -113,6 +113,12 @@ DESENFOQUE_BRILLO = 3      # cuánto se difumina el resplandor de la espada de l
 
 # --- Sonido ---
 CANALES_DE_AUDIO = 32      # cuántos sonidos pueden sonar a la vez
+# Música de fondo (la compone generar_sonidos.py). La primera es la tranquila del
+# menú; las otras 4 son las épicas de la partida, cada una más rápida y cargada.
+ARCHIVOS_MUSICA = ["sonidos/musica_menu.wav"] + [f"sonidos/musica_{i}.wav" for i in range(4)]
+NIVEL_MINIMO_MUSICA = [0, 2, 4, 7]   # desde qué nivel de dificultad suena cada versión épica
+VOLUMEN_MUSICA = 0.35      # de 0 a 1: más baja que los efectos, para que no tape los cortes
+FUNDIDO_MUSICA_MS = 1500   # milisegundos que tarda en pasar de una versión a otra
 
 # --- Botón para volver a la pantalla de inicio (también con ESC) ---
 BOTON_INICIO = (90, 14, 150, 40)     # x, y, ancho, alto (arriba a la izquierda, al lado del farol)

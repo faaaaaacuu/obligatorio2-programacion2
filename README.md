@@ -162,11 +162,12 @@ La tecla **M** muestra un recuadro abajo a la derecha con lo que se está detect
 | `vision.py`          | Todo lo de OpenCV: abrir la cámara, leer el cuadro y detectar la luz      |
 | `objetos.py`         | Las clases `Fruta`, `BombaMortal`, `Pedazo`, `Particula`, `TextoFlotante` y `Jugador` |
 | `inicio.py`          | La intro (espadazos y título) y la pantalla de inicio con las reglas animadas |
+| `musica.py`          | La música de fondo: cambia de versión según la dificultad, con fundido     |
 | `resultados.py`      | Lee y guarda el récord y el historial del versus (`resultados.json`)     |
 | `graficos.py`        | Funciones que dibujan las frutas, bombas, corazones, paneles y el brillo de la espada |
 | `ajustes.py`         | Constantes: colores, frutas de cada jugador, tamaños, velocidades, niveles y rangos de detección |
 | `fuentes/`           | Tipografías Shojumaru y Potta One, con sus licencias (OFL)                |
-| `sonidos/`           | Efectos de sonido. Los cortes suenan a katana (silbido + brillo metálico); también bomba, caída, vida, sello, etc. |
+| `sonidos/`           | Efectos de sonido (los cortes suenan a katana) y la música de fondo `musica.wav` |
 | `generar_sonidos.py` | Script que generó los `.wav` (no hace falta correrlo para jugar)          |
 
 ## Cómo funciona la detección
@@ -217,3 +218,31 @@ trazo de pincel japonés, y **Potta One** para los textos y el kanji del sello.
 - **Espada de luz:** se dibuja en dos capas que se **suman** a la pantalla (`BLEND_RGB_ADD`).
   Una capa chica se difumina y se agranda para el resplandor, y otra nítida lleva el centro blanco.
 - **Fondo:** la cámara se oscurece más en los bordes (viñeta), así la atención va al centro.
+
+## Música y sonidos
+
+Todo el audio lo genera `generar_sonidos.py` (no hace falta correrlo para jugar: los `.wav` ya
+están incluidos). Es todo original: no usa grabaciones ni canciones de nadie.
+
+- **Música de fondo** (suena en loop todo el tiempo): una pieza de 16 compases en la escala
+  japonesa *miyako-bushi* (Re, Mi♭, Sol, La, Si♭). El **koto** se sintetiza con el método de cuerda
+  pulsada *Karplus-Strong*; la **shakuhachi** (flauta) es un tono con vibrato y soplido; hay
+  **taiko** (tambor), palillos de madera y un zumbido grave. Todo con reverb, y armada para que al
+  repetirse no se note el corte.
+- **Menú, intro y finales:** la versión tranquila (`musica_menu.wav`).
+- **Durante la partida, música épica que acompaña la dificultad:** 4 versiones (`musica_0.wav` a
+  `musica_3.wav`) con la misma melodía de koto y flauta, más un fondo cinematográfico de
+  **cuerdas** (acordes en 3 voces apenas desafinadas), **coro** ("aaah", sintetizado con las
+  formantes de la vocal A), **o-daiko** (el tambor japonés gigante), **shime-daiko** (tambor chico que
+  empuja el ritmo) y un **bajo de cuerdas** cortas. Cuanto más difícil, más rápida y cargada:
+
+  | Versión | Tempo | Desde el nivel | Qué suma |
+  |---|---|---|---|
+  | 1 | 100 | 1 | cuerdas, o-daiko en los pulsos fuertes, bajo en negras |
+  | 2 | 112 | 3 | melodía doblada a la octava, más o-daiko, bajo en corcheas |
+  | 3 | 124 | 5 | coro en la segunda mitad, palillos, ritmos más cortados |
+  | 4 | 138 | 8 | coro siempre, carreritas de koto, shime en semicorcheas, redobles |
+
+  Se pasa de una a otra con un fundido (`musica.py`), sin cortar el juego.
+- **Cortes de katana:** un silbido de aire (ruido filtrado que sube y baja) más el brillo metálico de
+  la hoja, con reverb para que quede sonando hasta apagarse.

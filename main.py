@@ -35,6 +35,7 @@ import pygame
 import graficos
 import inicio
 import resultados
+from musica import Musica
 import vision
 from ajustes import *
 from graficos import dibujar_texto
@@ -147,6 +148,15 @@ def nivel_actual(juego):
     if juego["modo"] == 1:
         return juego["jugadores"][0].cortadas // FRUTAS_POR_NIVEL
     return NIVEL_INICIAL_VERSUS + int(juego["tiempo"] // SEGUNDOS_POR_NIVEL)
+
+
+def intensidad_de_musica(estado, juego):
+    """Qué música va: 0 es la tranquila (fuera de la partida); durante la partida
+    va una épica, de 1 a 4, más rápida y cargada cuanto más alto es el nivel."""
+    if estado != "jugando":
+        return 0
+    nivel = nivel_actual(juego)
+    return sum(1 for minimo in NIVEL_MINIMO_MUSICA if nivel >= minimo)
 
 
 def esta_pausado(juego):
@@ -468,6 +478,7 @@ def main():
         pygame.quit()
         return
     sonidos = cargar_sonidos()
+    musica = Musica(CARPETA)         # las 4 versiones de la música de fondo
     fuentes = cargar_fuentes()
     datos = resultados.cargar_resultados()
     fondo = graficos.crear_fondo(ANCHO, ALTO, COLOR_FONDO, OSCURIDAD_CENTRO, OSCURIDAD_BORDE)
@@ -592,6 +603,8 @@ def main():
             estado = actualizar_partida(juego, luces, dt, sonidos)
             if estado in ("perdiste", "fin_versus"):
                 terminar_partida(juego, datos)      # se guarda el resultado
+
+        musica.poner(intensidad_de_musica(estado, juego))   # cambia con un fundido si hace falta
 
         # 4) DIBUJAR
         if estado == "intro":
