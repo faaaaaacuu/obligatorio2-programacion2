@@ -9,6 +9,7 @@ y la corta, y después las mitades caen. Con `t % duracion` se repiten.
 """
 
 import math
+import os
 
 import pygame
 
@@ -18,9 +19,10 @@ from ajustes import (ANCHO, ALTO, TARJETA_ANCHO, TARJETA_ALTO, TARJETA_ANIMACION
                      SEPARACION_TARJETAS, Y_TARJETAS, RADIO_FRUTA_DEMO, DESFASE_TARJETAS,
                      FRUTAS_JUGADOR_1, FRUTAS_JUGADOR_2, COLORES_ESPADA, COLOR_JUGADOR_1,
                      COLOR_JUGADOR_2, COLOR_BOMBA_MORTAL, BLANCO, NEGRO, AMARILLO, VERDE,
-                     ROJO, GRIS, CONTORNO, DESENFOQUE_BRILLO, COLORES_INTRO, KANJI, FUENTE_KANJI, LUZ_FAROL)
+                     ROJO, GRIS, CONTORNO, DESENFOQUE_BRILLO, COLORES_INTRO, KANJI, ARCHIVO_FUENTE_TEXTO, LUZ_FAROL)
 
 LUZ = COLORES_ESPADA[0][1]      # color de la luz en las animaciones
+CARPETA = os.path.dirname(os.path.abspath(__file__))
 COLORES_EXPLOSION = [(255, 140, 30), (255, 220, 60), (255, 255, 255), (90, 90, 90)]
 
 
@@ -52,7 +54,8 @@ def crear_imagenes(fuentes):
     imagenes["blanco"] = blanco               # para el destello de la intro
     # estética de dojo: sello rojo con el kanji 光 ("luz") y faroles de papel.
     # (crear_sello devuelve None si la compu no tiene una fuente con ese kanji)
-    hay_kanji = pygame.font.match_font(FUENTE_KANJI) is not None
+    # el kanji sale de la fuente Potta One; si no estuviera, no se dibuja el sello
+    hay_kanji = os.path.exists(os.path.join(CARPETA, ARCHIVO_FUENTE_TEXTO))
     imagenes["sello"] = graficos.crear_sello(KANJI, fuentes["kanji"], 64) if hay_kanji else None
     imagenes["sello_chico"] = graficos.crear_sello(KANJI, fuentes["kanji_chico"], 42) if hay_kanji else None
     imagenes["farol"] = graficos.crear_farol(70)

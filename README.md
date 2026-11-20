@@ -161,6 +161,7 @@ La tecla **M** muestra un recuadro abajo a la derecha con lo que se está detect
 | `resultados.py`      | Lee y guarda el récord y el historial del versus (`resultados.json`)     |
 | `graficos.py`        | Funciones que dibujan las frutas, bombas, corazones, paneles y el brillo de la espada |
 | `ajustes.py`         | Constantes: colores, frutas de cada jugador, tamaños, velocidades, niveles y rangos de detección |
+| `fuentes/`           | Tipografías Shojumaru y Potta One, con sus licencias (OFL)                |
 | `sonidos/`           | Efectos de sonido (corte, bomba, caída, nivel, ganar, perder, lanzar y bomba mortal) |
 | `generar_sonidos.py` | Script que generó los `.wav` (no hace falta correrlo para jugar)          |
 
@@ -197,8 +198,11 @@ No se usan imágenes de archivos: todo se dibuja con pygame en `graficos.py`.
 dorado, textos color papel. La cámara se ve oscura, como detrás de un *shoji* (panel de papel) con su
 reja de madera. Hay faroles de papel rojo que se balancean, un *ensō* (el círculo zen pintado de una
 pincelada) en la intro y en la cuenta regresiva, y un sello rojo (*hanko*) con el kanji 光 ("luz").
-Las vidas son sellos redondos bermellón. Los títulos usan Baskerville y los textos Optima (el kanji
-usa Songti; si la compu no la tiene, el sello no se dibuja).
+Las vidas son sellos redondos bermellón.
+
+Las tipografías vienen incluidas en la carpeta `fuentes/` (licencia libre SIL OFL, con su archivo de
+licencia al lado), así el juego se ve igual en cualquier compu: **Shojumaru** para los títulos, con
+trazo de pincel japonés, y **Potta One** para los textos y el kanji del sello.
 
 - **Frutas con volumen:** cada fruta es una pila de óvalos, cada uno más chico, más claro y corrido
   hacia arriba a la izquierda, lo que da sensación de esfera. La imagen se arma una sola vez cuando

@@ -59,17 +59,26 @@ def cargar_sonidos():
     return sonidos
 
 
+def cargar_fuente(archivo, tamanio):
+    """Carga una fuente de la carpeta del juego. Si el archivo no está, devuelve
+    una fuente del sistema para que el juego no se rompa."""
+    ruta = os.path.join(CARPETA, archivo)
+    if os.path.exists(ruta):
+        return pygame.font.Font(ruta, tamanio)
+    return pygame.font.SysFont(FUENTE_RESPALDO, tamanio, bold=True)
+
+
 def cargar_fuentes():
     """Devuelve un diccionario con las fuentes de distintos tamaños."""
     return {
-        "titulo": pygame.font.SysFont(FUENTE_TITULO, 66),
-        "grande": pygame.font.SysFont(FUENTE_TITULO, 40),
-        "media": pygame.font.SysFont(FUENTE, 22, bold=True),
-        "chica": pygame.font.SysFont(FUENTE, 15, bold=True),
-        "tarjeta": pygame.font.SysFont(FUENTE_TITULO, 19),
-        "texto": pygame.font.SysFont(FUENTE, 13, bold=True),
-        "kanji": pygame.font.SysFont(FUENTE_KANJI, 42),
-        "kanji_chico": pygame.font.SysFont(FUENTE_KANJI, 27),
+        "titulo": cargar_fuente(ARCHIVO_FUENTE_TITULO, 56),
+        "grande": cargar_fuente(ARCHIVO_FUENTE_TITULO, 34),
+        "tarjeta": cargar_fuente(ARCHIVO_FUENTE_TITULO, 15),
+        "media": cargar_fuente(ARCHIVO_FUENTE_TEXTO, 20),
+        "chica": cargar_fuente(ARCHIVO_FUENTE_TEXTO, 14),
+        "texto": cargar_fuente(ARCHIVO_FUENTE_TEXTO, 12),
+        "kanji": cargar_fuente(ARCHIVO_FUENTE_TEXTO, 40),
+        "kanji_chico": cargar_fuente(ARCHIVO_FUENTE_TEXTO, 26),
     }
 
 

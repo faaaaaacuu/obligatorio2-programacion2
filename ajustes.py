@@ -10,13 +10,14 @@ FPS = 30
 TITULO = "Corte de Luz"
 PANTALLA_COMPLETA = True   # el juego se agranda a toda la pantalla (tecla F para cambiar)
 # Fuentes que se prueban en orden (si no está ninguna, pygame usa la suya)
-# Estética: dojo japonés de noche, minimalista. Títulos con una serifa clásica
-# (Baskerville) y textos con una letra limpia (Optima). Songti queda solo para el
-# kanji: no tiene las letras con tilde ni la "¡" del español.
-FUENTE_TITULO = "baskerville,palatino,georgia"
-FUENTE = "optima,verdana,arial"
-FUENTE_KANJI = "songti"    # para el sello con el kanji 光 ("luz"); si no está, no se dibuja
-KANJI = "光"
+# Estética: dojo japonés de noche, minimalista. Las fuentes vienen con el juego
+# (carpeta fuentes/, licencia libre OFL), así se ven igual en cualquier compu:
+#   Shojumaru: títulos, con trazo de pincel japonés
+#   Potta One: textos y el kanji del sello
+ARCHIVO_FUENTE_TITULO = "fuentes/Shojumaru-Regular.ttf"
+ARCHIVO_FUENTE_TEXTO = "fuentes/PottaOne-Regular.ttf"
+FUENTE_RESPALDO = "verdana,arial"   # por si falta el archivo de alguna fuente
+KANJI = "光"                         # "luz", para el sello rojo
 
 # --- Cámara y detección de la linterna ---
 INDICE_CAMARA = 0
