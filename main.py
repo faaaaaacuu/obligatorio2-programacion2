@@ -20,7 +20,8 @@ Controles:
   M        mostrar / ocultar lo que la cámara toma como "luz"
   C        cambiar el color de la luz y su estela (1 jugador)
   F        pantalla completa / ventana
-  ESC      salir (también se puede cerrar con la X de la ventana)
+  ESC      volver a la pantalla de inicio (en la pantalla de inicio: salir)
+           También hay un botón "INICIO" que se puede clickear, y la X cierra la ventana.
 """
 
 import math
@@ -77,6 +78,8 @@ def cargar_fuentes():
         "media": cargar_fuente(ARCHIVO_FUENTE_TEXTO, 20),
         "chica": cargar_fuente(ARCHIVO_FUENTE_TEXTO, 14),
         "texto": cargar_fuente(ARCHIVO_FUENTE_TEXTO, 12),
+        "numero": cargar_fuente(ARCHIVO_FUENTE_TEXTO, 36),   # números claros (el 0 de Shojumaru confunde)
+        "numero_grande": cargar_fuente(ARCHIVO_FUENTE_TEXTO, 60),
         "kanji": cargar_fuente(ARCHIVO_FUENTE_TEXTO, 40),
         "kanji_chico": cargar_fuente(ARCHIVO_FUENTE_TEXTO, 26),
     }
@@ -259,7 +262,7 @@ def dibujar_hud(pantalla, juego, fuentes, paneles, iconos_vida, destello):
         jugador = juego["jugadores"][0]
         pantalla.blit(paneles["puntos"], (12, 10))
         dibujar_texto(pantalla, "PUNTOS", fuentes["chica"], GRIS, (30, 18), False)
-        dibujar_texto(pantalla, str(jugador.puntos), fuentes["grande"], BLANCO, (28, 32), False)
+        dibujar_texto(pantalla, str(jugador.puntos), fuentes["numero"], BLANCO, (28, 30), False)
         if juego["supero_record"]:
             dibujar_texto(pantalla, "¡Récord superado!", fuentes["chica"], AMARILLO, (30, 82), False)
         elif juego["record"] > 0:
@@ -298,6 +301,21 @@ def dibujar_hud(pantalla, juego, fuentes, paneles, iconos_vida, destello):
                           (centro_zona, 170))
 
 
+def dibujar_boton_inicio(pantalla, fuentes):
+    """El botón para volver a la pantalla de inicio. Se aprieta con ESC o
+    haciendo clic; si el mouse está encima, se ilumina."""
+    boton = pygame.Rect(BOTON_INICIO)
+    encima = boton.collidepoint(pygame.mouse.get_pos())
+    pygame.draw.rect(pantalla, LACA, boton, border_radius=4)
+    pygame.draw.rect(pantalla, BLANCO if encima else AMARILLO, boton, 2 if encima else 1, border_radius=4)
+    # una flechita hacia la izquierda
+    x, y = boton.left + 18, boton.centery
+    pygame.draw.polygon(pantalla, AMARILLO, [(x - 7, y), (x + 4, y - 7), (x + 4, y + 7)])
+    dibujar_texto(pantalla, "INICIO", fuentes["media"], BLANCO if encima else AMARILLO,
+                  (boton.left + 32, boton.centery - fuentes["media"].get_height() // 2), False)
+    dibujar_texto(pantalla, "ESC", fuentes["texto"], GRIS, (boton.right - 22, boton.centery))
+
+
 def dibujar_nombres(pantalla, fuentes, nombres, cual, tiempo):
     """La pantalla donde cada jugador escribe su nombre antes del versus."""
     centro = ANCHO // 2
@@ -316,7 +334,7 @@ def dibujar_nombres(pantalla, fuentes, nombres, cual, tiempo):
         if activo and int(tiempo * 2) % 2 == 0:
             texto += "|"                     # cursor que titila
         dibujar_texto(pantalla, texto, fuentes["grande"], BLANCO if activo else GRIS, caja.center)
-    dibujar_texto(pantalla, "ENTER = listo     BORRAR = corregir     ESC = volver al menú",
+    dibujar_texto(pantalla, "ENTER = listo     BORRAR = corregir     ESC = volver al inicio",
                   fuentes["media"], VERDE, (centro, 400))
 
 
@@ -376,7 +394,7 @@ def dibujar_carteles(pantalla, estado, juego, fuentes, hay_luz, umbral, tiempo, 
         # cada segundo se pinta un ensō (círculo de pincel) alrededor del número
         avance = 1 - (juego["cartel"] % 1)
         graficos.dibujar_enso(pantalla, (centro, medio + 124), 50, ROJO, 10, avance / 0.6)
-        dibujar_texto(pantalla, str(segundos), fuentes["titulo"], BLANCO, (centro, medio + 120))
+        dibujar_texto(pantalla, str(segundos), fuentes["numero_grande"], BLANCO, (centro, medio + 122))
 
     elif estado == "perdiste":
         jugador = juego["jugadores"][0]
@@ -393,7 +411,7 @@ def dibujar_carteles(pantalla, estado, juego, fuentes, hay_luz, umbral, tiempo, 
             verbo = "Te faltó" if faltaron == 1 else "Te faltaron"
             dibujar_texto(pantalla, f"{verbo} {frutas(faltaron)} para superarlo", fuentes["media"],
                           BLANCO, (centro, medio + 45))
-        dibujar_texto(pantalla, "ESPACIO = otra vez     2 = versus     ESC = salir",
+        dibujar_texto(pantalla, "ESPACIO = otra vez     2 = versus     ESC = inicio",
                       fuentes["media"], VERDE, (centro, medio + 130))
 
     elif estado == "fin_versus":
@@ -418,7 +436,7 @@ def dibujar_carteles(pantalla, estado, juego, fuentes, hay_luz, umbral, tiempo, 
                      f"{partida['frutas2']} {partida['jugador2']}    {ganador}")
             dibujar_texto(pantalla, linea, fuentes["chica"], BLANCO if i == 0 else GRIS,
                           (centro, 292 + i * 26))
-        dibujar_texto(pantalla, "ESPACIO = revancha     2 = otros nombres     1 = un jugador     ESC = salir",
+        dibujar_texto(pantalla, "ESPACIO = revancha     2 = otros nombres     1 = un jugador     ESC = inicio",
                       fuentes["media"], VERDE, (centro, ALTO - 35))
 
 
@@ -483,6 +501,12 @@ def main():
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 corriendo = False
+            elif (evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1
+                  and estado not in ("intro", "menu")
+                  and pygame.Rect(BOTON_INICIO).collidepoint(evento.pos)):
+                # clic en el botón "INICIO" (si se estaba jugando, la partida se abandona)
+                pygame.key.stop_text_input()
+                estado = "menu"
             elif estado == "intro" and evento.type == pygame.KEYDOWN:
                 # cualquier tecla saltea la intro (ESC cierra el juego, como siempre)
                 if evento.key == pygame.K_ESCAPE:
@@ -503,7 +527,10 @@ def main():
             elif evento.type == pygame.KEYDOWN:
                 puede_empezar = estado in ("menu", "perdiste", "fin_versus")
                 if evento.key == pygame.K_ESCAPE:
-                    corriendo = False
+                    if estado == "menu":
+                        corriendo = False       # en la pantalla de inicio, ESC cierra el juego
+                    else:
+                        estado = "menu"         # en las demás, vuelve a la pantalla de inicio
                 elif evento.key in (pygame.K_1, pygame.K_KP1) and puede_empezar:
                     juego = nueva_partida(1, nombres, datos["record"], COLORES_ESPADA[indice_color][1])
                     estado = "cartel"
@@ -603,6 +630,11 @@ def main():
             else:
                 dibujar_carteles(pantalla, estado, juego, fuentes, sin_luz_menu <= TOLERANCIA_SIN_LUZ,
                                  umbral, tiempo, datos, COLORES_ESPADA[indice_color], imagenes_inicio)
+            # cómo volver a la pantalla de inicio: el botón, o mientras se juega solo un aviso chico
+            if estado == "jugando" and not esta_pausado(juego):
+                dibujar_texto(pantalla, "ESC = inicio", fuentes["texto"], GRIS, (18, ALTO - 30), False)
+            elif estado != "menu":
+                dibujar_boton_inicio(pantalla, fuentes)
 
             if ver_mascara and cuadro is not None:
                 chica = vision.mascara_chica_rgb(cuadro, umbral, ANCHO // 4, ALTO // 4)

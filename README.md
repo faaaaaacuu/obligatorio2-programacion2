@@ -49,6 +49,8 @@ las frutas que se caen, el triple y la bomba mortal del versus) y muestra cómo 
   empieza otro trazo. Funciona en los dos modos.
 - Al terminar, **ESPACIO** arranca otra partida del mismo modo sin cerrar la ventana
   (o **1** / **2** para cambiar de modo).
+- **ESC** (o el botón **INICIO**) vuelve a la pantalla de inicio desde cualquier lado. Si se
+  estaba jugando, esa partida se abandona y no se guarda.
 
 ### Modo 1 jugador: superar el récord
 
@@ -144,7 +146,9 @@ borrar ese archivo.
 | M               | Mostrar / ocultar lo que la cámara está tomando como "luz" |
 | C               | Cambiar el color de la luz y su estela (1 jugador)         |
 | F               | Pantalla completa / ventana                                |
-| ESC o la X      | Salir                                                      |
+| ESC             | Volver a la pantalla de inicio (en la pantalla de inicio: salir) |
+| Botón INICIO    | Volver a la pantalla de inicio con un clic (arriba a la izquierda) |
+| La X            | Cerrar el juego                                            |
 
 Si el juego detecta otras cosas como si fueran la linterna (lámparas, ventanas, la pantalla),
 hay que subir el umbral con **+**. Si no detecta la linterna, hay que bajarlo con **-**.

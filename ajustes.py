@@ -111,6 +111,9 @@ GRAVEDAD_PARTICULAS = 700
 DURACION_TEXTO_FLOTANTE = 0.7   # segundos que se ve el "+1" que sube desde la fruta
 DESENFOQUE_BRILLO = 3      # cuánto se difumina el resplandor de la espada de luz
 
+# --- Botón para volver a la pantalla de inicio (también con ESC) ---
+BOTON_INICIO = (90, 14, 150, 40)     # x, y, ancho, alto (arriba a la izquierda, al lado del farol)
+
 # --- Intro (lo primero que se ve al abrir el juego) ---
 DURACION_INTRO = 5.0       # segundos hasta que pasa sola a la pantalla de inicio
 COLORES_INTRO = [(240, 195, 90), (240, 70, 50)]   # color de cada espadazo: oro y bermellón
