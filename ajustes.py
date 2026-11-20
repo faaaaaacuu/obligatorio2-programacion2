@@ -96,9 +96,14 @@ GRAVEDAD_PARTICULAS = 700
 DURACION_TEXTO_FLOTANTE = 0.7   # segundos que se ve el "+1" que sube desde la fruta
 DESENFOQUE_BRILLO = 3      # cuánto se difumina el resplandor de la espada de luz
 
-# Frutas que vuelan de adorno por los costados del menú
-REGLAS_ADORNOS = {"radio": (30, 42), "gravedad": 130, "bombas": 0}
-ANCHO_ZONA_ADORNOS = 150
+# --- Pantalla de inicio: tarjetas con las reglas y su animación ---
+TARJETA_ANCHO = 172
+TARJETA_ALTO = 218
+TARJETA_ANIMACION_ALTO = 108   # alto de la parte de la tarjeta donde va la animación
+SEPARACION_TARJETAS = 12
+Y_TARJETAS = 106
+RADIO_FRUTA_DEMO = 20          # tamaño de las frutas en las animaciones
+DESFASE_TARJETAS = 0.7         # segundos de diferencia entre la animación de una tarjeta y la siguiente
 
 # --- La espada de luz ---
 LARGO_RASTRO = 12          # cuántas posiciones de la luz se dibujan en el rastro

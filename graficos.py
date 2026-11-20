@@ -345,6 +345,21 @@ def dibujar_espada(capa_suave, capa_nitida, puntos, color, luz):
 # Pantalla e interfaz
 # ---------------------------------------------------------------------------
 
+def dibujar_texto(pantalla, mensaje, fuente, color, posicion, centrado=True):
+    """Escribe un texto con borde oscuro para que se lea sobre la cámara."""
+    borde = fuente.render(mensaje, True, CONTORNO)
+    imagen = fuente.render(mensaje, True, color)
+    rect = imagen.get_rect()
+    if centrado:
+        rect.center = posicion
+    else:
+        rect.topleft = posicion
+    # el mismo texto en oscuro, corrido un poquito para cada lado, hace de borde
+    for dx, dy in ((-2, 0), (2, 0), (0, -2), (0, 2), (3, 3)):
+        pantalla.blit(borde, rect.move(dx, dy))
+    pantalla.blit(imagen, rect)
+
+
 def crear_fondo(ancho, alto, color, alfa_centro, alfa_borde, pasos=24):
     """Devuelve la capa que oscurece la cámara: más oscura en los bordes
     (efecto "viñeta"), así la atención va al centro."""

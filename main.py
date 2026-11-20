@@ -25,7 +25,6 @@ Controles:
 
 import math
 import os
-import random
 
 # Al agrandar el juego a pantalla completa, que lo suavice en vez de pixelarlo.
 os.environ.setdefault("SDL_RENDER_SCALE_QUALITY", "linear")
@@ -33,10 +32,12 @@ os.environ.setdefault("SDL_RENDER_SCALE_QUALITY", "linear")
 import pygame
 
 import graficos
+import inicio
 import resultados
 import vision
 from ajustes import *
-from objetos import Fruta, Jugador
+from graficos import dibujar_texto
+from objetos import Jugador
 
 CARPETA = os.path.dirname(os.path.abspath(__file__))
 NOMBRES_SONIDOS = ("corte", "bomba", "caida", "nivel", "ganar", "perder", "lanzar", "mortal", "vida")
@@ -65,6 +66,8 @@ def cargar_fuentes():
         "grande": pygame.font.SysFont(FUENTE_TITULO, 38),
         "media": pygame.font.SysFont(FUENTE, 22, bold=True),
         "chica": pygame.font.SysFont(FUENTE, 14, bold=True),
+        "tarjeta": pygame.font.SysFont(FUENTE_TITULO, 16),
+        "texto": pygame.font.SysFont(FUENTE, 12, bold=True),
     }
 
 
@@ -232,43 +235,6 @@ def a_superficie(imagen_rgb):
     return pygame.image.frombuffer(imagen_rgb.tobytes(), (ancho, alto), "RGB")
 
 
-def dibujar_texto(pantalla, mensaje, fuente, color, posicion, centrado=True):
-    """Escribe un texto con borde oscuro para que se lea sobre la cámara."""
-    borde = fuente.render(mensaje, True, CONTORNO)
-    imagen = fuente.render(mensaje, True, color)
-    rect = imagen.get_rect()
-    if centrado:
-        rect.center = posicion
-    else:
-        rect.topleft = posicion
-    # el mismo texto en oscuro, corrido un poquito para cada lado, hace de borde
-    for dx, dy in ((-2, 0), (2, 0), (0, -2), (0, 2), (3, 3)):
-        pantalla.blit(borde, rect.move(dx, dy))
-    pantalla.blit(imagen, rect)
-
-
-def dibujar_titulo(pantalla, fuente, tiempo):
-    """El título del menú: cada letra sube y baja como una ola y cambia de color."""
-    texto = "CORTE DE LUZ"
-    x = ANCHO // 2 - fuente.size(texto)[0] // 2
-    for i, letra in enumerate(texto):
-        ola = math.sin(tiempo * 3 + i * 0.5) * 6
-        tono = graficos.mezclar(AMARILLO, (255, 120, 0), (math.sin(tiempo * 2 + i * 0.4) + 1) / 2)
-        dibujar_texto(pantalla, letra, fuente, tono, (x, int(60 + ola)), False)
-        x += fuente.size(letra)[0]
-
-
-def actualizar_adornos(adornos, dt):
-    """Frutas que vuelan de fondo en el menú, solo de adorno. Devuelve la lista nueva."""
-    if random.random() < dt * 1.2 and len(adornos) < 5:
-        # solo por los costados, así no tapan el texto del medio
-        x_min, x_max = random.choice(((0, ANCHO_ZONA_ADORNOS), (ANCHO - ANCHO_ZONA_ADORNOS, ANCHO)))
-        adornos.append(Fruta(REGLAS_ADORNOS, x_min, x_max, FRUTAS_JUGADOR_1 + FRUTAS_JUGADOR_2))
-    for fruta in adornos:
-        fruta.actualizar(dt)
-    return [fruta for fruta in adornos if not fruta.se_cayo()]
-
-
 def dibujar_vidas(pantalla, corazones, vidas, x, y):
     """Dibuja un corazón por vida, a partir de (x, y)."""
     for i in range(VIDAS):
@@ -343,7 +309,8 @@ def dibujar_nombres(pantalla, fuentes, nombres, cual, tiempo):
                   fuentes["media"], VERDE, (centro, 400))
 
 
-def dibujar_carteles(pantalla, estado, juego, fuentes, hay_luz, umbral, tiempo, datos, color):
+def dibujar_carteles(pantalla, estado, juego, fuentes, hay_luz, umbral, tiempo, datos, color,
+                     imagenes_inicio):
     """Escribe los textos que corresponden a cada estado (menú, cuenta regresiva, final)."""
     centro = ANCHO // 2
     medio = ALTO // 2
@@ -360,26 +327,8 @@ def dibujar_carteles(pantalla, estado, juego, fuentes, hay_luz, umbral, tiempo, 
         return
 
     if estado == "menu":
-        dibujar_titulo(pantalla, fuentes["titulo"], tiempo)
-        dibujar_texto(pantalla, "Prendé la linterna del celular y cortá las frutas con la luz",
-                      fuentes["media"], BLANCO, (centro, medio - 75))
-        dibujar_texto(pantalla, "Esquivá las bombas y no dejes caer frutas",
-                      fuentes["chica"], BLANCO, (centro, medio - 42))
-        if hay_luz:
-            dibujar_texto(pantalla, "Linterna detectada", fuentes["media"], VERDE, (centro, medio - 5))
-        else:
-            dibujar_texto(pantalla, "No veo la linterna", fuentes["media"], ROJO, (centro, medio - 5))
-        nombre_color, tono = color
-        dibujar_texto(pantalla, f"C = color de la luz: {nombre_color}", fuentes["media"], tono,
-                      (centro, medio + 25))
-        dibujar_texto(pantalla, "1  =  un jugador", fuentes["grande"], AMARILLO, (centro, medio + 75))
-        dibujar_texto(pantalla, "2  =  versus", fuentes["grande"], AMARILLO, (centro, medio + 122))
-        if datos["record"] > 0:
-            dibujar_texto(pantalla, f"Récord: {datos['record']}", fuentes["media"], BLANCO,
-                          (centro, medio + 170))
-        dibujar_texto(pantalla, f"Umbral de brillo: {umbral}   (+/- para ajustar, M para ver la luz)"
-                      "   |   F = pantalla completa   |   ESC = salir",
-                      fuentes["chica"], GRIS, (centro, ALTO - 20))
+        inicio.dibujar_inicio(pantalla, fuentes, imagenes_inicio, tiempo, hay_luz, color,
+                              datos["record"], umbral)
 
     elif estado == "cartel":
         segundos = max(1, int(juego["cartel"]) + 1)
@@ -487,6 +436,7 @@ def main():
     capa_suave = pygame.Surface((ANCHO // 4, ALTO // 4))
     capa_nitida = pygame.Surface((ANCHO, ALTO))
     corazones = {True: graficos.crear_corazon(28, True), False: graficos.crear_corazon(28, False)}
+    imagenes_inicio = inicio.crear_imagenes()     # para las animaciones de la pantalla de inicio
     paneles = {
         "puntos": graficos.crear_panel(200, 104),
         "vidas": graficos.crear_panel(160, 64),
@@ -501,7 +451,6 @@ def main():
     indice_color = 0             # filtro de color elegido (posición en COLORES_ESPADA)
     sin_luz_menu = 0.0           # en el menú: segundos seguidos sin ver ninguna linterna
     juego = nueva_partida(1, nombres, datos["record"], COLORES_ESPADA[indice_color][1])
-    adornos = []                 # frutas que vuelan de fondo en el menú
     umbral = UMBRAL_BRILLO
     ver_mascara = False
     tiempo = 0.0                 # segundos desde que arrancó (para las animaciones)
@@ -570,9 +519,7 @@ def main():
             sin_luz_menu = 0.0
         else:
             sin_luz_menu += dt
-        if estado == "menu":
-            adornos = actualizar_adornos(adornos, dt)
-        elif estado == "cartel":
+        if estado == "cartel":
             juego["cartel"] -= dt
             if juego["cartel"] <= 0:
                 estado = "jugando"
@@ -614,14 +561,11 @@ def main():
             dibujar_hud(pantalla, juego, fuentes, paneles, corazones, destello)
         if estado != "jugando" or esta_pausado(juego):
             pantalla.blit(capa_cartel, (0, 0))
-        if estado == "menu":
-            for fruta in adornos:
-                fruta.dibujar(pantalla)
         if estado == "nombres":
             dibujar_nombres(pantalla, fuentes, nombres, cual_nombre, tiempo)
         else:
             dibujar_carteles(pantalla, estado, juego, fuentes, sin_luz_menu <= TOLERANCIA_SIN_LUZ,
-                             umbral, tiempo, datos, COLORES_ESPADA[indice_color])
+                             umbral, tiempo, datos, COLORES_ESPADA[indice_color], imagenes_inicio)
 
         if ver_mascara and cuadro is not None:
             chica = vision.mascara_chica_rgb(cuadro, umbral, ANCHO // 4, ALTO // 4)
