@@ -443,9 +443,10 @@ def main():
         "versus": graficos.crear_panel(MITAD - 24, 112),
     }
 
-    # Estados: "menu" -> "cartel" (cuenta regresiva) -> "jugando" -> "perdiste"
+    # Estados: "intro" -> "menu" -> "cartel" (cuenta regresiva) -> "jugando" -> "perdiste"
     #          versus: "menu" -> "nombres" -> "cartel" -> "jugando" -> "fin_versus"
-    estado = "menu"
+    estado = "intro"
+    tiempo_intro = 0.0           # segundos desde que empezó la intro
     nombres = ["", ""]           # nombres del versus (se recuerdan para la revancha)
     cual_nombre = 0              # qué nombre se está escribiendo
     indice_color = 0             # filtro de color elegido (posición en COLORES_ESPADA)
@@ -462,6 +463,12 @@ def main():
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 corriendo = False
+            elif estado == "intro" and evento.type == pygame.KEYDOWN:
+                # cualquier tecla saltea la intro (ESC cierra el juego, como siempre)
+                if evento.key == pygame.K_ESCAPE:
+                    corriendo = False
+                else:
+                    estado = "menu"
             elif estado == "nombres":
                 # Mientras se escriben los nombres, el teclado es para escribir.
                 if evento.type == pygame.KEYDOWN and evento.key == pygame.K_ESCAPE:
@@ -519,7 +526,14 @@ def main():
             sin_luz_menu = 0.0
         else:
             sin_luz_menu += dt
-        if estado == "cartel":
+        if estado == "intro":
+            antes = tiempo_intro
+            tiempo_intro += dt
+            for nombre in inicio.sonidos_a_tocar(antes, tiempo_intro):
+                sonidos[nombre].play()
+            if tiempo_intro >= DURACION_INTRO:
+                estado = "menu"
+        elif estado == "cartel":
             juego["cartel"] -= dt
             if juego["cartel"] <= 0:
                 estado = "jugando"
@@ -529,47 +543,50 @@ def main():
                 terminar_partida(juego, datos)      # se guarda el resultado
 
         # 4) DIBUJAR
-        if cuadro is not None:
-            pantalla.blit(a_superficie(vision.a_rgb(cuadro)), (0, 0))
+        if estado == "intro":
+            inicio.dibujar_intro(pantalla, capa_suave, capa_nitida, fuentes, imagenes_inicio, tiempo_intro)
         else:
-            pantalla.fill(NEGRO)
-        pantalla.blit(fondo, (0, 0))
+            if cuadro is not None:
+                pantalla.blit(a_superficie(vision.a_rgb(cuadro)), (0, 0))
+            else:
+                pantalla.fill(NEGRO)
+            pantalla.blit(fondo, (0, 0))
 
-        capa_suave.fill(NEGRO)
-        capa_nitida.fill(NEGRO)
-        if estado == "jugando":
-            for jugador in juego["jugadores"]:
-                jugador.dibujar(pantalla, fuentes["media"])
-                jugador.dibujar_brillo(capa_suave, capa_nitida)
-            if juego["modo"] == 2:
-                # línea que divide las dos mitades, con el color de cada jugador
-                for corrida, color in ((-3, COLOR_JUGADOR_1), (3, COLOR_JUGADOR_2), (0, BLANCO)):
-                    pygame.draw.line(capa_nitida, graficos.mezclar(NEGRO, color, 0.6),
-                                     (MITAD + corrida, 0), (MITAD + corrida, ALTO), 3)
-                pygame.draw.line(capa_suave, (60, 60, 80), (MITAD // 4, 0), (MITAD // 4, ALTO // 4), 3)
-        elif estado == "menu":
-            for luz in luces:   # en el menú se ve dónde está cada luz
-                graficos.dibujar_espada(capa_suave, capa_nitida, [], COLORES_ESPADA[indice_color][1], luz)
-        # las capas de brillo se SUMAN: el negro no cambia nada y los colores iluminan
-        # (el resplandor se difumina y se agranda: queda suave, como luz de verdad)
-        resplandor = graficos.difuminar(capa_suave, DESENFOQUE_BRILLO)
-        resplandor = pygame.transform.smoothscale(resplandor, (ANCHO, ALTO))
-        pantalla.blit(resplandor, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
-        pantalla.blit(capa_nitida, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
+            capa_suave.fill(NEGRO)
+            capa_nitida.fill(NEGRO)
+            if estado == "jugando":
+                for jugador in juego["jugadores"]:
+                    jugador.dibujar(pantalla, fuentes["media"])
+                    jugador.dibujar_brillo(capa_suave, capa_nitida)
+                if juego["modo"] == 2:
+                    # línea que divide las dos mitades, con el color de cada jugador
+                    for corrida, color in ((-3, COLOR_JUGADOR_1), (3, COLOR_JUGADOR_2), (0, BLANCO)):
+                        pygame.draw.line(capa_nitida, graficos.mezclar(NEGRO, color, 0.6),
+                                         (MITAD + corrida, 0), (MITAD + corrida, ALTO), 3)
+                    pygame.draw.line(capa_suave, (60, 60, 80), (MITAD // 4, 0), (MITAD // 4, ALTO // 4), 3)
+            elif estado == "menu":
+                for luz in luces:   # en el menú se ve dónde está cada luz
+                    graficos.dibujar_espada(capa_suave, capa_nitida, [], COLORES_ESPADA[indice_color][1], luz)
+            # las capas de brillo se SUMAN: el negro no cambia nada y los colores iluminan
+            # (el resplandor se difumina y se agranda: queda suave, como luz de verdad)
+            resplandor = graficos.difuminar(capa_suave, DESENFOQUE_BRILLO)
+            resplandor = pygame.transform.smoothscale(resplandor, (ANCHO, ALTO))
+            pantalla.blit(resplandor, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
+            pantalla.blit(capa_nitida, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
 
-        if estado == "jugando":
-            dibujar_hud(pantalla, juego, fuentes, paneles, corazones, destello)
-        if estado != "jugando" or esta_pausado(juego):
-            pantalla.blit(capa_cartel, (0, 0))
-        if estado == "nombres":
-            dibujar_nombres(pantalla, fuentes, nombres, cual_nombre, tiempo)
-        else:
-            dibujar_carteles(pantalla, estado, juego, fuentes, sin_luz_menu <= TOLERANCIA_SIN_LUZ,
-                             umbral, tiempo, datos, COLORES_ESPADA[indice_color], imagenes_inicio)
+            if estado == "jugando":
+                dibujar_hud(pantalla, juego, fuentes, paneles, corazones, destello)
+            if estado != "jugando" or esta_pausado(juego):
+                pantalla.blit(capa_cartel, (0, 0))
+            if estado == "nombres":
+                dibujar_nombres(pantalla, fuentes, nombres, cual_nombre, tiempo)
+            else:
+                dibujar_carteles(pantalla, estado, juego, fuentes, sin_luz_menu <= TOLERANCIA_SIN_LUZ,
+                                 umbral, tiempo, datos, COLORES_ESPADA[indice_color], imagenes_inicio)
 
-        if ver_mascara and cuadro is not None:
-            chica = vision.mascara_chica_rgb(cuadro, umbral, ANCHO // 4, ALTO // 4)
-            pantalla.blit(a_superficie(chica), (ANCHO - ANCHO // 4 - 10, ALTO - ALTO // 4 - 10))
+            if ver_mascara and cuadro is not None:
+                chica = vision.mascara_chica_rgb(cuadro, umbral, ANCHO // 4, ALTO // 4)
+                pantalla.blit(a_superficie(chica), (ANCHO - ANCHO // 4 - 10, ALTO - ALTO // 4 - 10))
 
         pygame.display.flip()
         dt = min(reloj.tick(FPS) / 1000, 0.1)  # tope por si un cuadro tarda mucho

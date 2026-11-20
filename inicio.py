@@ -1,4 +1,5 @@
-"""Pantalla de inicio: el título, las reglas y cómo empezar.
+"""La intro (dos espadazos de luz y el título) y la pantalla de inicio
+(el título, las reglas y cómo empezar).
 
 Cada regla es una "tarjeta" con un título, una explicación corta y una
 animación que se repite mostrando qué pasa en el juego. Las animaciones no
@@ -17,7 +18,7 @@ from ajustes import (ANCHO, ALTO, TARJETA_ANCHO, TARJETA_ALTO, TARJETA_ANIMACION
                      SEPARACION_TARJETAS, Y_TARJETAS, RADIO_FRUTA_DEMO, DESFASE_TARJETAS,
                      FRUTAS_JUGADOR_1, FRUTAS_JUGADOR_2, COLORES_ESPADA, COLOR_JUGADOR_1,
                      COLOR_JUGADOR_2, COLOR_BOMBA_MORTAL, BLANCO, NEGRO, AMARILLO, VERDE,
-                     ROJO, GRIS, CONTORNO)
+                     ROJO, GRIS, CONTORNO, DESENFOQUE_BRILLO, COLORES_INTRO)
 
 LUZ = COLORES_ESPADA[0][1]      # color de la luz en las animaciones
 COLORES_EXPLOSION = [(255, 140, 30), (255, 220, 60), (255, 255, 255), (90, 90, 90)]
@@ -47,6 +48,9 @@ def crear_imagenes():
     imagenes["rojo"] = rojo
     imagenes["tarjeta"] = graficos.crear_panel(TARJETA_ANCHO, TARJETA_ALTO)
     imagenes["modo"] = graficos.crear_panel(340, 74)
+    blanco = pygame.Surface((ANCHO, ALTO), pygame.SRCALPHA)
+    blanco.fill((255, 255, 255, 255))
+    imagenes["blanco"] = blanco               # para el destello de la intro
     return imagenes
 
 
@@ -385,3 +389,95 @@ def dibujar_inicio(pantalla, fuentes, imagenes, tiempo, hay_luz, color, record, 
                   (centro + 190, y))
     dibujar_texto(pantalla, f"+/- umbral de brillo ({umbral})   ·   M = ver la luz   ·   "
                   "F = pantalla completa   ·   ESC = salir", fuentes["chica"], GRIS, (centro, ALTO - 16))
+
+
+# ---------------------------------------------------------------------------
+# Intro: lo primero que se ve al abrir el juego
+# ---------------------------------------------------------------------------
+
+# Los dos espadazos: (desde, hasta, segundo en que empieza, segundo en que termina, color).
+# Cruzan la pantalla en diagonal y forman una X.
+ESPADAZOS = [
+    ((-60, 40), (ANCHO + 60, ALTO - 70), 0.45, 0.75, COLORES_INTRO[0]),
+    ((ANCHO + 60, 50), (-60, ALTO - 50), 1.05, 1.35, COLORES_INTRO[1]),
+]
+APARECE_TITULO = 1.6        # segundo en que aparece el título (después del segundo espadazo)
+
+# Sonidos de la intro: (segundo en que suena, nombre del sonido)
+SONIDOS_INTRO = [(ESPADAZOS[0][2], "corte"), (ESPADAZOS[1][2], "corte"), (APARECE_TITULO, "nivel")]
+
+
+def sonidos_a_tocar(antes, ahora):
+    """Devuelve los sonidos de la intro que tocan entre el segundo `antes` y `ahora`."""
+    return [nombre for momento, nombre in SONIDOS_INTRO if antes < momento <= ahora]
+
+
+def dibujar_espadazo(capa_suave, capa_nitida, t, desde, hasta, t0, t1, color):
+    """Un espadazo: la hoja de luz cruza la pantalla de punta a punta y deja
+    una marca que se va apagando."""
+    if t < t0:
+        return
+    apagado = 1.0 if t <= t1 else max(0.0, 1 - (t - t1) / 0.6)
+    if apagado <= 0:
+        return
+    tono = mezclar(NEGRO, color, apagado)
+    punta = luz_en(t, desde, hasta, t0, t1)
+    # la marca fina de todo lo que ya cortó
+    pygame.draw.line(capa_nitida, mezclar(NEGRO, color, 0.5 * apagado), desde, punta, 2)
+    # la hoja: las posiciones de los últimos instantes
+    puntos = [luz_en(t - k * 0.02, desde, hasta, t0, t1) for k in range(10, -1, -1)]
+    graficos.dibujar_espada(capa_suave, capa_nitida, puntos, tono, punta if t <= t1 else None)
+
+
+def dibujar_intro(pantalla, capa_suave, capa_nitida, fuentes, imagenes, t):
+    """La intro: pantalla negra, dos espadazos de luz, un destello y aparece el título."""
+    pantalla.fill(NEGRO)
+
+    # Los espadazos se dibujan con brillo, igual que la luz en el juego (capas que se suman)
+    capa_suave.fill(NEGRO)
+    capa_nitida.fill(NEGRO)
+    for desde, hasta, t0, t1, color in ESPADAZOS:
+        dibujar_espadazo(capa_suave, capa_nitida, t, desde, hasta, t0, t1, color)
+    resplandor = graficos.difuminar(capa_suave, DESENFOQUE_BRILLO)
+    pantalla.blit(pygame.transform.smoothscale(resplandor, (ANCHO, ALTO)), (0, 0),
+                  special_flags=pygame.BLEND_RGB_ADD)
+    pantalla.blit(capa_nitida, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
+
+    if t >= APARECE_TITULO:
+        dt = t - APARECE_TITULO
+        # el título entra grande y "golpea" hasta su tamaño normal
+        avance = min(1.0, dt / 0.35)
+        escala = 1 + 0.7 * (1 - avance) ** 3
+        ancho, alto = fuentes["titulo"].size("CORTE DE LUZ")
+        titulo = pygame.Surface((ancho + 12, alto + 12), pygame.SRCALPHA)
+        dibujar_texto(titulo, "CORTE DE LUZ", fuentes["titulo"], AMARILLO, (ancho // 2 + 6, alto // 2 + 6))
+        titulo = pygame.transform.rotozoom(titulo, 0, 1.4 * escala)
+        centro = (ANCHO // 2, ALTO // 2 - 30)
+        # resplandor del título: el mismo texto (más oscuro y sobre fondo negro, porque al
+        # SUMARLO a la pantalla el negro no aporta nada), achicado, borroneado y agrandado
+        # al tamaño del título que se ve
+        texto = fuentes["titulo"].render("CORTE DE LUZ", True, mezclar(NEGRO, AMARILLO, 0.6), NEGRO)
+        margen = alto                     # lugar para que el brillo se desvanezca antes del borde
+        lienzo = pygame.Surface((ancho + 2 * margen, alto + 2 * margen))
+        lienzo.fill(NEGRO)
+        lienzo.blit(texto, (margen, margen))
+        ancho_lienzo, alto_lienzo = lienzo.get_size()
+        brillo = pygame.transform.smoothscale(lienzo, (ancho_lienzo // 8, alto_lienzo // 8))
+        brillo = graficos.difuminar(brillo, 2)
+        tamanio = 1.4 * escala            # el mismo tamaño que el título
+        brillo = pygame.transform.smoothscale(brillo, (int(ancho_lienzo * tamanio), int(alto_lienzo * tamanio)))
+        pantalla.blit(brillo, brillo.get_rect(center=centro), special_flags=pygame.BLEND_RGB_ADD)
+        pantalla.blit(titulo, titulo.get_rect(center=centro))
+
+        if dt > 0.6:
+            dibujar_texto(pantalla, "Un juego de linterna y cámara", fuentes["media"], BLANCO,
+                          (ANCHO // 2, ALTO // 2 + 55))
+        if dt > 1.2 and int(t * 2) % 2 == 0:
+            dibujar_texto(pantalla, "Apretá cualquier tecla", fuentes["chica"], GRIS,
+                          (ANCHO // 2, ALTO - 50))
+
+    # destello blanco justo cuando aparece el título
+    destello = t - (APARECE_TITULO - 0.08)
+    if 0 <= destello < 0.45:
+        imagenes["blanco"].set_alpha(int(230 * (1 - destello / 0.45)))
+        pantalla.blit(imagenes["blanco"], (0, 0))

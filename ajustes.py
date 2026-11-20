@@ -96,6 +96,10 @@ GRAVEDAD_PARTICULAS = 700
 DURACION_TEXTO_FLOTANTE = 0.7   # segundos que se ve el "+1" que sube desde la fruta
 DESENFOQUE_BRILLO = 3      # cuánto se difumina el resplandor de la espada de luz
 
+# --- Intro (lo primero que se ve al abrir el juego) ---
+DURACION_INTRO = 5.0       # segundos hasta que pasa sola a la pantalla de inicio
+COLORES_INTRO = [(0, 220, 255), (255, 60, 200)]   # color de cada uno de los dos espadazos
+
 # --- Pantalla de inicio: tarjetas con las reglas y su animación ---
 TARJETA_ANCHO = 172
 TARJETA_ALTO = 218

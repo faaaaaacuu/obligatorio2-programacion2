@@ -29,7 +29,10 @@ python3 main.py
 El juego arranca en **pantalla completa**. Con **F** se pasa a ventana (y se puede cerrar con la X)
 y con **F** de nuevo se vuelve a pantalla completa. Se puede cambiar en `ajustes.py` (`PANTALLA_COMPLETA`).
 
-La **pantalla de inicio** explica las reglas con 5 tarjetas animadas (cortar frutas, las bombas,
+Al abrirse, el juego muestra una **intro**: pantalla negra, dos espadazos de luz que forman una X
+y aparece el título. Dura unos 5 segundos y se puede saltear con cualquier tecla.
+
+Después, la **pantalla de inicio** explica las reglas con 5 tarjetas animadas (cortar frutas, las bombas,
 las frutas que se caen, el triple y la bomba mortal del versus) y muestra cómo empezar cada modo.
 
 1. Prender la linterna del celular y apuntarla hacia la cámara.
@@ -154,7 +157,7 @@ La tecla **M** muestra un recuadro abajo a la derecha con lo que se está detect
 | `main.py`            | El bucle principal (eventos, actualizar, dibujar, `reloj.tick`) y los estados del juego |
 | `vision.py`          | Todo lo de OpenCV: abrir la cámara, leer el cuadro y detectar la luz      |
 | `objetos.py`         | Las clases `Fruta`, `BombaMortal`, `Pedazo`, `Particula`, `TextoFlotante` y `Jugador` |
-| `inicio.py`          | La pantalla de inicio: las tarjetas con las reglas y sus animaciones      |
+| `inicio.py`          | La intro (espadazos y título) y la pantalla de inicio con las reglas animadas |
 | `resultados.py`      | Lee y guarda el récord y el historial del versus (`resultados.json`)     |
 | `graficos.py`        | Funciones que dibujan las frutas, bombas, corazones, paneles y el brillo de la espada |
 | `ajustes.py`         | Constantes: colores, frutas de cada jugador, tamaños, velocidades, niveles y rangos de detección |
