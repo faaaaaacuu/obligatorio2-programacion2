@@ -24,7 +24,12 @@ PASO_UMBRAL = 5
 DESENFOQUE = 11            # tamaño del desenfoque (impar) para sacar ruido antes de detectar
 AREA_MINIMA_LUZ = 25       # área mínima (píxeles) de la mancha de luz, para ignorar reflejos chicos
 TOLERANCIA_SIN_LUZ = 2.0   # segundos sin ver la luz antes de darla por perdida (aviso y pausa)
-HUECO_MAXIMO_CORTE = 0.2   # si la luz desaparece menos que esto, el corte sigue de donde estaba
+HUECO_MAXIMO_CORTE = 0.12  # si la luz desaparece menos que esto (unos 3 cuadros), el corte sigue de donde estaba
+# Velocidad máxima (píxeles por segundo) a la que una mano puede mover la luz. Si la luz
+# "salta" más rápido que esto, es un reflejo (por ejemplo en una pared blanca) y no cuenta.
+# Ej.: del centro a la esquina de arriba a la izquierda son ~550 px; en 0.2 s serían
+# ~2750 px/s: imposible. Cruzar media pantalla en 0.25 s (~1900 px/s) sí vale.
+VELOCIDAD_MAXIMA_LUZ = 2500
 
 # --- Colores (R, G, B) ---
 BLANCO = (255, 255, 255)

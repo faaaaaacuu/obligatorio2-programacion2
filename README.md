@@ -88,6 +88,13 @@ cámara no llegó a ver no corta el juego). Si pasan los 2 segundos, aparece el 
 **"No veo la linterna"** y el juego se **pausa** hasta que la luz vuelva (en el versus se pausa
 para los dos, así nadie pierde vidas por eso). Se cambia con `TOLERANCIA_SIN_LUZ` en `ajustes.py`.
 
+**Reflejos (límite de velocidad):** a veces la cámara confunde la linterna con su reflejo en una
+pared o superficie blanca, y la "luz" salta de golpe a otro lado. Para que eso no corte frutas,
+el juego calcula a qué velocidad se movió la luz desde la última posición buena. Si es más rápida
+que lo que puede una mano (`VELOCIDAD_MAXIMA_LUZ` = 2500 píxeles por segundo; por ejemplo, ir del
+centro a la esquina de arriba en 0,2 s), ese punto no cuenta. Si el reflejo se queda quieto, al
+rato se acepta, pero como un trazo nuevo, sin unir los dos lugares.
+
 **Filtro de color:** el punto de luz y su estela se tiñen de un color. Jugando solo, la tecla **C**
 cambia entre cian, verde, rosa, rojo, violeta y amarillo (también en medio de la partida). En el
 versus cada jugador tiene el suyo: celeste a la izquierda y naranja a la derecha.

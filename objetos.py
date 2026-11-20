@@ -10,7 +10,8 @@ import pygame
 import graficos
 from ajustes import (ALTO, ALTURA_MINIMA, ALTURA_MAXIMA, VELOCIDAD_LATERAL,
                      VELOCIDAD_GIRO, SEPARACION_PEDAZOS, MARGEN_CORTE,
-                     VIDAS, TOLERANCIA_SIN_LUZ, HUECO_MAXIMO_CORTE, MOVIMIENTO_MINIMO, LARGO_RASTRO,
+                     VIDAS, TOLERANCIA_SIN_LUZ, HUECO_MAXIMO_CORTE, VELOCIDAD_MAXIMA_LUZ,
+                     MOVIMIENTO_MINIMO, LARGO_RASTRO,
                      DURACION_MENSAJE, DURACION_DESTELLO, DURACION_TEXTO_FLOTANTE,
                      VENTANA_CIRCULO, VUELTAS_PARA_BOMBA, MOVIMIENTO_MINIMO_GIRO,
                      GIRO_MAXIMO_POR_PASO, RADIO_BOLA, RADIO_BOMBA_MORTAL,
@@ -39,6 +40,14 @@ def distancia_punto_segmento(punto, inicio, fin):
     cerca_x = ax + t * dx
     cerca_y = ay + t * dy
     return math.hypot(px - cerca_x, py - cerca_y)
+
+
+def es_salto_imposible(desde, hasta, segundos):
+    """Devuelve True si ir de `desde` a `hasta` en esos segundos es más rápido de lo
+    que una mano puede mover la linterna (VELOCIDAD_MAXIMA_LUZ). Pasa cuando la
+    cámara confunde la linterna con un reflejo que aparece lejos de golpe."""
+    distancia = math.hypot(hasta[0] - desde[0], hasta[1] - desde[1])
+    return distancia > VELOCIDAD_MAXIMA_LUZ * segundos
 
 
 def contar_vueltas(puntos):
@@ -331,7 +340,14 @@ class Jugador:
 
         Si la cámara no ve la luz, no se la da por perdida enseguida: durante
         TOLERANCIA_SIN_LUZ segundos el punto se queda donde estaba y la estela
-        se va achicando. Recién después se considera que no hay linterna."""
+        se va achicando. Recién después se considera que no hay linterna.
+
+        Si la luz "salta" a una velocidad imposible para una mano (un reflejo),
+        ese cuadro se ignora, como si no se hubiera visto la luz."""
+        if luz is not None and self.luz is not None:
+            # tiempo desde la última posición buena: este cuadro + los que no se vio
+            if es_salto_imposible(self.luz, luz, self.sin_luz + dt):
+                luz = None
         if luz is None:
             self.sin_luz += dt
             if self.rastro:
