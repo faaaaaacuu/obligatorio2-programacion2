@@ -8,7 +8,7 @@ import random
 import pygame
 
 import graficos
-from ajustes import (ALTO, ALTURA_MINIMA, ALTURA_MAXIMA, VELOCIDAD_LATERAL,
+from ajustes import (ALTO, REBOTE_EN_EL_BORDE, ALTURA_MINIMA, ALTURA_MAXIMA, VELOCIDAD_LATERAL,
                      VELOCIDAD_GIRO, SEPARACION_PEDAZOS, MARGEN_CORTE,
                      VIDAS, TOLERANCIA_SIN_LUZ, HUECO_MAXIMO_CORTE, VELOCIDAD_MAXIMA_LUZ,
                      MOVIMIENTO_MINIMO, LARGO_RASTRO,
@@ -436,6 +436,16 @@ class Jugador:
         self.mensaje_color = color
         self.mensaje_tiempo = duracion
 
+    def mantener_en_zona(self, cosa, radio):
+        """Si una fruta (o un pedazo, o una gota) se va a salir por un costado de
+        la zona del jugador, rebota hacia adentro: así nada pasa al campo del rival."""
+        if cosa.x - radio < self.x_min:
+            cosa.x = self.x_min + radio
+            cosa.vx = abs(cosa.vx) * REBOTE_EN_EL_BORDE
+        elif cosa.x + radio > self.x_max:
+            cosa.x = self.x_max - radio
+            cosa.vx = -abs(cosa.vx) * REBOTE_EN_EL_BORDE
+
     def actualizar(self, segmento, reglas, dt, sonidos):
         """Hace aparecer, mover, cortar y caer las frutas de este jugador."""
         self.mensaje_tiempo -= dt
@@ -451,6 +461,7 @@ class Jugador:
         quedan = []
         for fruta in self.frutas:
             fruta.actualizar(dt)
+            self.mantener_en_zona(fruta, fruta.radio)
             if segmento is not None and fruta.fue_cortada(*segmento):
                 self.particulas.extend(fruta.explotar())
                 if fruta.mortal:
@@ -484,13 +495,20 @@ class Jugador:
         # Pedazos, partículas y textos: se mueven y se borran cuando terminan.
         for cosa in self.pedazos + self.particulas + self.textos:
             cosa.actualizar(dt)
+        for pedazo in self.pedazos:
+            self.mantener_en_zona(pedazo, pedazo.radio)
+        for particula in self.particulas:
+            self.mantener_en_zona(particula, particula.radio)
         self.pedazos = [p for p in self.pedazos if not p.fuera_de_pantalla()]
         self.particulas = [p for p in self.particulas if p.viva()]
         self.textos = [t for t in self.textos if t.viva()]
 
     def dibujar(self, pantalla, fuente):
         """Dibuja sus frutas, los pedazos, el jugo, la bola si la está cargando
-        y los "+1". (La espada de luz se dibuja aparte, en dibujar_brillo.)"""
+        y los "+1". (La espada de luz se dibuja aparte, en dibujar_brillo.)
+        Todo se dibuja "recortado" a la zona del jugador (set_clip): aunque una
+        imagen sea más grande, nunca se ve del lado del rival."""
+        pantalla.set_clip(pygame.Rect(self.x_min, 0, self.x_max - self.x_min, ALTO))
         for pedazo in self.pedazos:
             pedazo.dibujar(pantalla)
         for fruta in self.frutas:
@@ -511,6 +529,7 @@ class Jugador:
                             math.pi / 2 + 2 * math.pi * self.carga, 4)
         for texto in self.textos:
             texto.dibujar(pantalla, fuente)
+        pantalla.set_clip(None)         # vuelve a dejar dibujar en toda la pantalla
 
     def dibujar_brillo(self, capa_suave, capa_nitida):
         """Dibuja la espada de luz en las capas de brillo (se suman a la pantalla)."""

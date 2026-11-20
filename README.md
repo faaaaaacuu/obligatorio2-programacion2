@@ -88,6 +88,10 @@ y tirarla **te deja con 1 vida**. Si el rival la esquiva, la partida sigue.
   el historial entre esos dos jugadores (por ejemplo "Ana 3 - 1 Facu") y las últimas partidas.
 - **ESPACIO** es la revancha con los mismos nombres; **2** permite cambiarlos.
 
+Como cada uno tiene media pantalla, en el versus las frutas son **más chicas** (70 % del tamaño,
+`ESCALA_FRUTAS_VERSUS`), y **nada pasa al campo del rival**: las frutas, sus mitades y el jugo
+rebotan contra el borde de la zona de cada jugador, y además cada uno se dibuja recortado a su mitad.
+
 Conviene que cada jugador se pare de su lado y no cruce la linterna a la mitad del otro.
 
 Si la cámara deja de ver una linterna, no se la da por perdida enseguida: durante **2 segundos**

@@ -178,6 +178,9 @@ RADIO_MINIMO = 26
 # En el versus cada jugador tiene media pantalla: las frutas son más chicas
 # (este número multiplica su tamaño) para que se pueda controlar la situación.
 ESCALA_FRUTAS_VERSUS = 0.7
+# Las frutas y sus restos no pasan al campo del otro jugador: rebotan contra el
+# borde de su zona y conservan esta parte de la velocidad (0.5 = la mitad).
+REBOTE_EN_EL_BORDE = 0.5
 
 # --- Resultados guardados ---
 ARCHIVO_RESULTADOS = "resultados.json"   # récord y partidas del versus
