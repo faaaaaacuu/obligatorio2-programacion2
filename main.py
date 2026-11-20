@@ -54,6 +54,9 @@ ZONAS_MENU = [(0, MITAD), (MITAD, ANCHO)]
 
 def cargar_sonidos():
     """Carga los sonidos una sola vez. Devuelve un diccionario nombre -> Sound."""
+    # Los cortes tienen reverb y quedan sonando un rato: con más canales se pueden
+    # superponer muchos sin que se pierda ninguno (pygame trae 8).
+    pygame.mixer.set_num_channels(CANALES_DE_AUDIO)
     sonidos = {}
     for nombre in NOMBRES_SONIDOS:
         ruta = os.path.join(CARPETA, "sonidos", nombre + ".wav")

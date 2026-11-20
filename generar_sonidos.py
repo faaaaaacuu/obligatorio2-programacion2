@@ -103,11 +103,72 @@ def normalizar(muestras, maximo):
     return [m * maximo / mayor for m in muestras]
 
 
-def katana(duracion_silbido, brillo, maximo, frecuencias=(900, 5200, 2500), pico=0.4, semilla=1):
-    """Un corte de katana: el silbido del aire y, un poquito después, el brillo de la hoja."""
+def eco_que_se_apaga(muestras, retardo, segundos_en_apagarse):
+    """Un eco que se repite: a cada sonido le suma lo que sonó `retardo` segundos
+    antes, un poco más bajo. Con `segundos_en_apagarse` se elige cuánto tarda en
+    bajar a casi nada (en audio se llama "filtro peine")."""
+    paso = int(MUESTRAS_POR_SEGUNDO * retardo)
+    ganancia = 10 ** (-3 * retardo / segundos_en_apagarse)
+    salida = list(muestras)
+    for i in range(paso, len(salida)):
+        salida[i] += salida[i - paso] * ganancia
+    return salida
+
+
+def difusor(muestras, retardo, ganancia=0.7):
+    """Desparrama un sonido en el tiempo sin cambiar su color, para que los ecos
+    no se escuchen de a uno sino como una nube (en audio: filtro "pasa todo")."""
+    paso = int(MUESTRAS_POR_SEGUNDO * retardo)
+    entrada = list(muestras)
+    salida = [0.0] * len(entrada)
+    for i in range(len(entrada)):
+        anterior_entrada = entrada[i - paso] if i >= paso else 0.0
+        anterior_salida = salida[i - paso] if i >= paso else 0.0
+        salida[i] = -ganancia * entrada[i] + anterior_entrada + ganancia * anterior_salida
+    return salida
+
+
+def reverb(muestras, segundos_cola=1.5, mezcla=0.35):
+    """Le agrega reverberación (el eco de una sala, como un dojo de madera), y le
+    deja `segundos_cola` de silencio al final para que el eco se apague solo.
+    Es la reverb clásica de Schroeder: 4 ecos de distinto largo sumados, y
+    después 2 difusores. `mezcla` es cuánto se oye la sala (0 = nada, 1 = solo sala)."""
+    con_cola = muestras + [0.0] * int(MUESTRAS_POR_SEGUNDO * segundos_cola)
+    ecos = [0.0] * len(con_cola)
+    for retardo in (0.0297, 0.0371, 0.0411, 0.0437):     # largos distintos: no "chocan" entre sí
+        for i, valor in enumerate(eco_que_se_apaga(con_cola, retardo, segundos_cola * 0.8)):
+            ecos[i] += valor / 4
+    sala = difusor(difusor(ecos, 0.005), 0.0017)
+    return [seco * (1 - mezcla) + mojado * mezcla for seco, mojado in zip(con_cola, sala)]
+
+
+def sacar_silencio_final(muestras, umbral=0.0005):
+    """Saca del final las muestras que ya casi no se oyen (más bajas que `umbral`
+    respecto del punto más fuerte), así el archivo no tiene una cola muda."""
+    limite = max(abs(m) for m in muestras) * umbral
+    final = len(muestras)
+    while final > 0 and abs(muestras[final - 1]) < limite:
+        final -= 1
+    return muestras[:final]
+
+
+def desvanecer_final(muestras, segundos=0.25):
+    """Baja el volumen hasta cero en los últimos `segundos`, para que nunca termine de golpe."""
+    total = int(MUESTRAS_POR_SEGUNDO * segundos)
+    salida = list(muestras)
+    for k in range(min(total, len(salida))):
+        salida[-1 - k] *= k / total
+    return salida
+
+
+def katana(duracion_silbido, brillo, maximo, frecuencias=(900, 5200, 2500), pico=0.4, semilla=1,
+           segundos_cola=1.5):
+    """Un corte de katana: el silbido del aire y, un poquito después, el brillo de
+    la hoja, todo con la reverb de la sala para que quede sonando hasta apagarse."""
     aire = normalizar(silbido(duracion_silbido, *frecuencias, pico=pico, semilla=semilla), 1.0)
-    hoja = normalizar(brillo_metalico(duracion_silbido * 2.2), brillo)
-    return normalizar(juntar(aire, hoja, duracion_silbido * pico * 0.8), maximo)
+    hoja = normalizar(brillo_metalico(1.4), brillo)            # dura hasta apagarse solo
+    tajo = juntar(aire, hoja, duracion_silbido * pico * 0.8)
+    return normalizar(desvanecer_final(sacar_silencio_final(reverb(tajo, segundos_cola))), maximo)
 
 
 def guardar(nombre, muestras):
@@ -124,12 +185,13 @@ def guardar(nombre, muestras):
 if __name__ == "__main__":
     os.makedirs(CARPETA, exist_ok=True)
     guardar("corte", katana(0.2, 0.35, 0.7))                                    # tajo corto
-    guardar("espadazo", katana(0.42, 0.55, 0.85, (600, 6500, 1800), 0.45, 2))  # el de la intro
+    guardar("espadazo", katana(0.42, 0.55, 0.85, (600, 6500, 1800), 0.45, 2, 2.2))  # el de la intro
     guardar("bomba", barrido(140, 40, 0.6, 0.8, ruido=0.9))
     guardar("caida", barrido(420, 160, 0.3, 0.4))
     guardar("nivel", nota(660, 0.12) + nota(880, 0.12) + nota(1100, 0.3))
     guardar("ganar", nota(523, 0.15) + nota(659, 0.15) + nota(784, 0.15) + nota(1047, 0.5))
-    guardar("lanzar", normalizar(silbido(0.6, 300, 4000, 3000, pico=0.85, semilla=3), 0.6))
+    guardar("lanzar", normalizar(desvanecer_final(reverb(silbido(0.6, 300, 4000, 3000, pico=0.85, semilla=3),
+                                                         1.0)), 0.6))
     guardar("mortal", barrido(300, 30, 1.2, 0.9, ruido=1.0))
     guardar("vida", nota(784, 0.08) + nota(1047, 0.08) + nota(1319, 0.08) + nota(1568, 0.25))
     guardar("sello", barrido(170, 60, 0.14, 0.8, ruido=0.5))
