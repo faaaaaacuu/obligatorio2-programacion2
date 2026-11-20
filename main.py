@@ -143,6 +143,12 @@ def reglas_de_nivel(nivel):
     }
 
 
+def achicar_frutas(reglas, escala):
+    """Devuelve una copia de las reglas con las frutas `escala` veces su tamaño."""
+    chico, grande = reglas["radio"]
+    return dict(reglas, radio=(int(chico * escala), int(grande * escala)))
+
+
 def nivel_actual(juego):
     """Devuelve el nivel de dificultad. Sube solo, sin avisar: jugando solo,
     cada FRUTAS_POR_NIVEL frutas cortadas; en el versus, cada SEGUNDOS_POR_NIVEL."""
@@ -183,6 +189,8 @@ def actualizar_partida(juego, luces, dt, sonidos):
     jugador ((x, y) o None). Devuelve el estado siguiente:
     'jugando', 'perdiste' (1 jugador) o 'fin_versus'."""
     reglas = reglas_de_nivel(nivel_actual(juego))
+    if juego["modo"] == 2:
+        reglas = achicar_frutas(reglas, ESCALA_FRUTAS_VERSUS)    # media pantalla: frutas más chicas
     jugadores = juego["jugadores"]
     segmentos = [jugador.mover_luz(luz, dt) for jugador, luz in zip(jugadores, luces)]
 

@@ -175,6 +175,9 @@ TOPE_ESPERA = (0.3, 0.5)
 TOPE_BOMBAS = 0.35
 TOPE_MAX_FRUTAS = 8
 RADIO_MINIMO = 26
+# En el versus cada jugador tiene media pantalla: las frutas son más chicas
+# (este número multiplica su tamaño) para que se pueda controlar la situación.
+ESCALA_FRUTAS_VERSUS = 0.7
 
 # --- Resultados guardados ---
 ARCHIVO_RESULTADOS = "resultados.json"   # récord y partidas del versus
@@ -190,6 +193,6 @@ VUELTAS_PARA_BOMBA = 1.5   # vueltas seguidas que hay que dar para completar la 
 MOVIMIENTO_MINIMO_GIRO = 5 # píxeles: movimientos más chicos no cuentan (temblor de la mano)
 GIRO_MAXIMO_POR_PASO = 60  # grados: si la luz dobla más de golpe es un corte, no un círculo
 RADIO_BOLA = 40            # tamaño de la bola cuando está completa
-RADIO_BOMBA_MORTAL = 48
+RADIO_BOMBA_MORTAL = 38
 GRAVEDAD_BOMBA_MORTAL = 160  # cae despacio, así molesta un buen rato
 VIDAS_AL_TIRAR_BOMBA = 1
