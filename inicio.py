@@ -18,7 +18,7 @@ from ajustes import (ANCHO, ALTO, TARJETA_ANCHO, TARJETA_ALTO, TARJETA_ANIMACION
                      SEPARACION_TARJETAS, Y_TARJETAS, RADIO_FRUTA_DEMO, DESFASE_TARJETAS,
                      FRUTAS_JUGADOR_1, FRUTAS_JUGADOR_2, COLORES_ESPADA, COLOR_JUGADOR_1,
                      COLOR_JUGADOR_2, COLOR_BOMBA_MORTAL, BLANCO, NEGRO, AMARILLO, VERDE,
-                     ROJO, GRIS, CONTORNO, DESENFOQUE_BRILLO, COLORES_INTRO)
+                     ROJO, GRIS, CONTORNO, DESENFOQUE_BRILLO, COLORES_INTRO, KANJI, FUENTE_KANJI, LUZ_FAROL)
 
 LUZ = COLORES_ESPADA[0][1]      # color de la luz en las animaciones
 COLORES_EXPLOSION = [(255, 140, 30), (255, 220, 60), (255, 255, 255), (90, 90, 90)]
@@ -28,8 +28,8 @@ COLORES_EXPLOSION = [(255, 140, 30), (255, 220, 60), (255, 255, 255), (90, 90, 9
 # Imágenes (se arman una sola vez, antes del bucle)
 # ---------------------------------------------------------------------------
 
-def crear_imagenes():
-    """Arma todas las imágenes que usan las animaciones. Devuelve un diccionario."""
+def crear_imagenes(fuentes):
+    """Arma todas las imágenes de la intro y la pantalla de inicio. Devuelve un diccionario."""
     tipos = {fruta["tipo"]: fruta for fruta in FRUTAS_JUGADOR_1 + FRUTAS_JUGADOR_2}
     r = RADIO_FRUTA_DEMO
     imagenes = {}
@@ -41,8 +41,7 @@ def crear_imagenes():
     imagenes["bomba"] = graficos.crear_imagen_bomba(r)
     imagenes["mortal"] = graficos.crear_imagen_bomba(r, mortal=True)
     imagenes["halo"] = graficos.crear_halo(r * 2, COLOR_BOMBA_MORTAL)
-    imagenes["corazones"] = {True: graficos.crear_corazon(16, True),
-                             False: graficos.crear_corazon(16, False)}
+    imagenes["vidas"] = {True: graficos.crear_vida(16, True), False: graficos.crear_vida(16, False)}
     rojo = pygame.Surface((TARJETA_ANCHO, TARJETA_ANIMACION_ALTO), pygame.SRCALPHA)
     rojo.fill((255, 40, 40, 255))
     imagenes["rojo"] = rojo
@@ -51,6 +50,13 @@ def crear_imagenes():
     blanco = pygame.Surface((ANCHO, ALTO), pygame.SRCALPHA)
     blanco.fill((255, 255, 255, 255))
     imagenes["blanco"] = blanco               # para el destello de la intro
+    # estética de dojo: sello rojo con el kanji 光 ("luz") y faroles de papel.
+    # (crear_sello devuelve None si la compu no tiene una fuente con ese kanji)
+    hay_kanji = pygame.font.match_font(FUENTE_KANJI) is not None
+    imagenes["sello"] = graficos.crear_sello(KANJI, fuentes["kanji"], 64) if hay_kanji else None
+    imagenes["sello_chico"] = graficos.crear_sello(KANJI, fuentes["kanji_chico"], 42) if hay_kanji else None
+    imagenes["farol"] = graficos.crear_farol(70)
+    imagenes["halo_farol"] = graficos.crear_halo(70, LUZ_FAROL, alfa_maximo=90)
     return imagenes
 
 
@@ -143,14 +149,14 @@ def texto_flotante(sup, fuente, texto, color, x, y, dt, duracion=0.9):
 
 
 def dibujar_vidas(sup, imagenes, llenas, nueva=None, dt=0):
-    """Tres corazoncitos arriba a la derecha. Si `nueva` es el número de un
-    corazón que se acaba de llenar, aparece agrandado y se achica."""
+    """Tres sellitos de vida arriba a la derecha. Si `nueva` es el número de una
+    vida que se acaba de recuperar, aparece agrandada y se achica."""
     ancho = sup.get_width()
     for i in range(3):
         escala = 1
         if i == nueva and dt < 0.3:
             escala = 1.8 - dt / 0.3 * 0.8
-        pegar(sup, imagenes["corazones"][i < llenas], ancho - 46 + i * 18, 12, escala=escala)
+        pegar(sup, imagenes["vidas"][i < llenas], ancho - 46 + i * 18, 12, escala=escala)
 
 
 def fruta_subiendo(t, apice):
@@ -319,21 +325,28 @@ TARJETAS = [
     Tarjeta("¡BOMBAS NO!", "Si cortás una bomba, perdés una vida.", ROJO, animar_bomba),
     Tarjeta("QUE NO CAIGAN", "Cada fruta que se cae sin cortar te saca una vida.",
             AMARILLO, animar_caida),
-    Tarjeta("TRIPLE", "3 frutas en un solo trazo te devuelven una vida.", LUZ, animar_triple),
+    Tarjeta("TRIPLE", "3 frutas en un solo trazo te devuelven una vida.",
+            COLORES_ESPADA[3][1], animar_triple),
     Tarjeta("BOMBA MORTAL", "Versus: girá la luz en círculos y se la mandás al rival.",
             COLOR_BOMBA_MORTAL, animar_mortal),
 ]
 
 
-def dibujar_titulo(pantalla, fuente, tiempo):
-    """El título: cada letra sube y baja como una ola y cambia de color."""
+def dibujar_titulo(pantalla, fuente, tiempo, sello):
+    """El título con el sello rojo al lado. Las letras se mecen apenas y les
+    pasa un brillo dorado, despacio (minimalista)."""
     texto = "CORTE DE LUZ"
-    x = ANCHO // 2 - fuente.size(texto)[0] // 2
+    ancho = fuente.size(texto)[0]
+    if sello is not None:
+        ancho += 16 + sello.get_width()
+    x = ANCHO // 2 - ancho // 2
     for i, letra in enumerate(texto):
-        ola = math.sin(tiempo * 3 + i * 0.5) * 6
-        tono = mezclar(AMARILLO, (255, 120, 0), (math.sin(tiempo * 2 + i * 0.4) + 1) / 2)
-        dibujar_texto(pantalla, letra, fuente, tono, (x, int(8 + ola)), False)
+        ola = math.sin(tiempo * 2 + i * 0.5) * 3
+        tono = mezclar(AMARILLO, BLANCO, (math.sin(tiempo * 1.5 - i * 0.35) + 1) / 4)
+        dibujar_texto(pantalla, letra, fuente, tono, (x, int(10 + ola)), False)
         x += fuente.size(letra)[0]
+    if sello is not None:
+        pantalla.blit(sello, sello.get_rect(midleft=(x + 16, 10 + fuente.get_height() // 2)))
 
 
 def dibujar_tecla(pantalla, fuente, letra, x, y, tiempo):
@@ -350,7 +363,10 @@ def dibujar_tecla(pantalla, fuente, letra, x, y, tiempo):
 def dibujar_inicio(pantalla, fuentes, imagenes, tiempo, hay_luz, color, record, umbral):
     """Dibuja toda la pantalla de inicio."""
     centro = ANCHO // 2
-    dibujar_titulo(pantalla, fuentes["titulo"], tiempo)
+    # dos faroles de papel colgando en las esquinas, que se balancean despacio
+    graficos.dibujar_farol(pantalla, imagenes["farol"], imagenes["halo_farol"], 50, 10, tiempo)
+    graficos.dibujar_farol(pantalla, imagenes["farol"], imagenes["halo_farol"], ANCHO - 50, 10, tiempo, 1.7)
+    dibujar_titulo(pantalla, fuentes["titulo"], tiempo, imagenes["sello_chico"])
 
     # Las tarjetas con las reglas (cada animación arranca un poco después que la anterior)
     total = len(TARJETAS) * TARJETA_ANCHO + (len(TARJETAS) - 1) * SEPARACION_TARJETAS
@@ -404,7 +420,9 @@ ESPADAZOS = [
 APARECE_TITULO = 1.6        # segundo en que aparece el título (después del segundo espadazo)
 
 # Sonidos de la intro: (segundo en que suena, nombre del sonido)
-SONIDOS_INTRO = [(ESPADAZOS[0][2], "corte"), (ESPADAZOS[1][2], "corte"), (APARECE_TITULO, "nivel")]
+SELLO_INTRO = APARECE_TITULO + 0.75   # segundo en que se "estampa" el sello rojo
+SONIDOS_INTRO = [(ESPADAZOS[0][2], "corte"), (ESPADAZOS[1][2], "corte"),
+                 (APARECE_TITULO, "nivel"), (SELLO_INTRO, "sello")]
 
 
 def sonidos_a_tocar(antes, ahora):
@@ -430,7 +448,8 @@ def dibujar_espadazo(capa_suave, capa_nitida, t, desde, hasta, t0, t1, color):
 
 
 def dibujar_intro(pantalla, capa_suave, capa_nitida, fuentes, imagenes, t):
-    """La intro: pantalla negra, dos espadazos de luz, un destello y aparece el título."""
+    """La intro: pantalla negra, dos espadazos de luz, un destello, se pinta un
+    ensō (el círculo zen) y aparece el título; al final se estampa el sello."""
     pantalla.fill(NEGRO)
 
     # Los espadazos se dibujan con brillo, igual que la luz en el juego (capas que se suman)
@@ -443,16 +462,23 @@ def dibujar_intro(pantalla, capa_suave, capa_nitida, fuentes, imagenes, t):
                   special_flags=pygame.BLEND_RGB_ADD)
     pantalla.blit(capa_nitida, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
 
+    centro = (ANCHO // 2, ALTO // 2 - 30)
+    if t >= APARECE_TITULO - 0.05:
+        # el ensō se pinta detrás del título, de una sola pincelada
+        avance = (t - APARECE_TITULO + 0.05) / 0.55
+        graficos.dibujar_enso(pantalla, centro, 165, mezclar(NEGRO, ROJO, 0.8), 30, avance)
+
     if t >= APARECE_TITULO:
         dt = t - APARECE_TITULO
+        graficos.dibujar_farol(pantalla, imagenes["farol"], imagenes["halo_farol"], 70, 30, t)
+        graficos.dibujar_farol(pantalla, imagenes["farol"], imagenes["halo_farol"], ANCHO - 70, 30, t, 1.7)
         # el título entra grande y "golpea" hasta su tamaño normal
         avance = min(1.0, dt / 0.35)
         escala = 1 + 0.7 * (1 - avance) ** 3
         ancho, alto = fuentes["titulo"].size("CORTE DE LUZ")
         titulo = pygame.Surface((ancho + 12, alto + 12), pygame.SRCALPHA)
         dibujar_texto(titulo, "CORTE DE LUZ", fuentes["titulo"], AMARILLO, (ancho // 2 + 6, alto // 2 + 6))
-        titulo = pygame.transform.rotozoom(titulo, 0, 1.4 * escala)
-        centro = (ANCHO // 2, ALTO // 2 - 30)
+        titulo = pygame.transform.rotozoom(titulo, 0, 1.15 * escala)
         # resplandor del título: el mismo texto (más oscuro y sobre fondo negro, porque al
         # SUMARLO a la pantalla el negro no aporta nada), achicado, borroneado y agrandado
         # al tamaño del título que se ve
@@ -464,14 +490,21 @@ def dibujar_intro(pantalla, capa_suave, capa_nitida, fuentes, imagenes, t):
         ancho_lienzo, alto_lienzo = lienzo.get_size()
         brillo = pygame.transform.smoothscale(lienzo, (ancho_lienzo // 8, alto_lienzo // 8))
         brillo = graficos.difuminar(brillo, 2)
-        tamanio = 1.4 * escala            # el mismo tamaño que el título
+        tamanio = 1.15 * escala           # el mismo tamaño que el título
         brillo = pygame.transform.smoothscale(brillo, (int(ancho_lienzo * tamanio), int(alto_lienzo * tamanio)))
         pantalla.blit(brillo, brillo.get_rect(center=centro), special_flags=pygame.BLEND_RGB_ADD)
         pantalla.blit(titulo, titulo.get_rect(center=centro))
 
+        # el sello rojo se estampa a la derecha del título: cae grande y "golpea"
+        if imagenes["sello"] is not None and t >= SELLO_INTRO:
+            golpe = min(1.0, (t - SELLO_INTRO) / 0.15)
+            sello = pygame.transform.rotozoom(imagenes["sello"], 0, 1 + 0.9 * (1 - golpe) ** 2)
+            x_sello = centro[0] + titulo.get_width() // 2 + 6
+            pantalla.blit(sello, sello.get_rect(center=(x_sello, centro[1] + 34)))
+
         if dt > 0.6:
             dibujar_texto(pantalla, "Un juego de linterna y cámara", fuentes["media"], BLANCO,
-                          (ANCHO // 2, ALTO // 2 + 55))
+                          (ANCHO // 2, ALTO // 2 + 160))
         if dt > 1.2 and int(t * 2) % 2 == 0:
             dibujar_texto(pantalla, "Apretá cualquier tecla", fuentes["chica"], GRIS,
                           (ANCHO // 2, ALTO - 50))

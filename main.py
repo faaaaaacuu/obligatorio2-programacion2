@@ -40,7 +40,7 @@ from graficos import dibujar_texto
 from objetos import Jugador
 
 CARPETA = os.path.dirname(os.path.abspath(__file__))
-NOMBRES_SONIDOS = ("corte", "bomba", "caida", "nivel", "ganar", "perder", "lanzar", "mortal", "vida")
+NOMBRES_SONIDOS = ("corte", "bomba", "caida", "nivel", "ganar", "perder", "lanzar", "mortal", "vida", "sello")
 MITAD = ANCHO // 2
 # En el menú todavía no hay modo elegido: se busca una luz en cada mitad.
 ZONAS_MENU = [(0, MITAD), (MITAD, ANCHO)]
@@ -62,12 +62,14 @@ def cargar_sonidos():
 def cargar_fuentes():
     """Devuelve un diccionario con las fuentes de distintos tamaños."""
     return {
-        "titulo": pygame.font.SysFont(FUENTE_TITULO, 64),
-        "grande": pygame.font.SysFont(FUENTE_TITULO, 38),
+        "titulo": pygame.font.SysFont(FUENTE_TITULO, 66),
+        "grande": pygame.font.SysFont(FUENTE_TITULO, 40),
         "media": pygame.font.SysFont(FUENTE, 22, bold=True),
-        "chica": pygame.font.SysFont(FUENTE, 14, bold=True),
-        "tarjeta": pygame.font.SysFont(FUENTE_TITULO, 16),
-        "texto": pygame.font.SysFont(FUENTE, 12, bold=True),
+        "chica": pygame.font.SysFont(FUENTE, 15, bold=True),
+        "tarjeta": pygame.font.SysFont(FUENTE_TITULO, 19),
+        "texto": pygame.font.SysFont(FUENTE, 13, bold=True),
+        "kanji": pygame.font.SysFont(FUENTE_KANJI, 42),
+        "kanji_chico": pygame.font.SysFont(FUENTE_KANJI, 27),
     }
 
 
@@ -235,14 +237,14 @@ def a_superficie(imagen_rgb):
     return pygame.image.frombuffer(imagen_rgb.tobytes(), (ancho, alto), "RGB")
 
 
-def dibujar_vidas(pantalla, corazones, vidas, x, y):
-    """Dibuja un corazón por vida, a partir de (x, y)."""
+def dibujar_vidas(pantalla, iconos_vida, vidas, x, y):
+    """Dibuja un sello por vida, a partir de (x, y)."""
     for i in range(VIDAS):
-        imagen = corazones[i < vidas]       # True = corazón lleno, False = vacío
+        imagen = iconos_vida[i < vidas]     # True = vida que queda, False = perdida
         pantalla.blit(imagen, imagen.get_rect(center=(x + i * 40, y)))
 
 
-def dibujar_hud(pantalla, juego, fuentes, paneles, corazones, destello):
+def dibujar_hud(pantalla, juego, fuentes, paneles, iconos_vida, destello):
     """Paneles con puntos, récord, vidas y los mensajes de cada jugador."""
     if juego["modo"] == 1:
         jugador = juego["jugadores"][0]
@@ -257,13 +259,13 @@ def dibujar_hud(pantalla, juego, fuentes, paneles, corazones, destello):
             dibujar_texto(pantalla, "Sin récord todavía", fuentes["chica"], GRIS, (30, 82), False)
         x_panel = ANCHO - 12 - paneles["vidas"].get_width()
         pantalla.blit(paneles["vidas"], (x_panel, 10))
-        dibujar_vidas(pantalla, corazones, jugador.vidas, x_panel + 40, 42)
+        dibujar_vidas(pantalla, iconos_vida, jugador.vidas, x_panel + 40, 42)
     else:
         for jugador in juego["jugadores"]:
             x = jugador.x_min + 12
             pantalla.blit(paneles["versus"], (x, 10))
             dibujar_texto(pantalla, jugador.nombre, fuentes["media"], jugador.color, (x + 16, 16), False)
-            dibujar_vidas(pantalla, corazones, jugador.vidas, x + 205, 32)
+            dibujar_vidas(pantalla, iconos_vida, jugador.vidas, x + 205, 32)
             dibujar_texto(pantalla, f"Frutas: {jugador.cortadas}", fuentes["media"], BLANCO,
                           (x + 16, 50), False)
             if jugador.bomba_usada:
@@ -299,8 +301,8 @@ def dibujar_nombres(pantalla, fuentes, nombres, cual, tiempo):
         dibujar_texto(pantalla, titulo, fuentes["media"], color, (x, 225))
         caja = pygame.Rect(0, 0, 360, 64)
         caja.center = (x, 285)
-        pygame.draw.rect(pantalla, (10, 10, 30), caja, border_radius=12)
-        pygame.draw.rect(pantalla, color if activo else GRIS, caja, 4 if activo else 2, border_radius=12)
+        pygame.draw.rect(pantalla, LACA, caja, border_radius=4)
+        pygame.draw.rect(pantalla, color if activo else GRIS, caja, 3 if activo else 1, border_radius=4)
         texto = nombres[i]
         if activo and int(tiempo * 2) % 2 == 0:
             texto += "|"                     # cursor que titila
@@ -329,8 +331,14 @@ def dibujar_carteles(pantalla, estado, juego, fuentes, hay_luz, umbral, tiempo, 
     if estado == "menu":
         inicio.dibujar_inicio(pantalla, fuentes, imagenes_inicio, tiempo, hay_luz, color,
                               datos["record"], umbral)
+        return
 
-    elif estado == "cartel":
+    # En la cuenta regresiva y en los finales también cuelgan los faroles del dojo
+    graficos.dibujar_farol(pantalla, imagenes_inicio["farol"], imagenes_inicio["halo_farol"], 50, 10, tiempo)
+    graficos.dibujar_farol(pantalla, imagenes_inicio["farol"], imagenes_inicio["halo_farol"],
+                           ANCHO - 50, 10, tiempo, 1.7)
+
+    if estado == "cartel":
         segundos = max(1, int(juego["cartel"]) + 1)
         if juego["modo"] == 2:
             uno, dos = juego["jugadores"]
@@ -356,7 +364,10 @@ def dibujar_carteles(pantalla, estado, juego, fuentes, hay_luz, umbral, tiempo, 
                           fuentes["media"], BLANCO, (centro, medio - 15))
             dibujar_texto(pantalla, "y cada vez se pone más difícil",
                           fuentes["media"], BLANCO, (centro, medio + 15))
-        dibujar_texto(pantalla, str(segundos), fuentes["titulo"], VERDE, (centro, medio + 120))
+        # cada segundo se pinta un ensō (círculo de pincel) alrededor del número
+        avance = 1 - (juego["cartel"] % 1)
+        graficos.dibujar_enso(pantalla, (centro, medio + 124), 50, ROJO, 10, avance / 0.6)
+        dibujar_texto(pantalla, str(segundos), fuentes["titulo"], BLANCO, (centro, medio + 120))
 
     elif estado == "perdiste":
         jugador = juego["jugadores"][0]
@@ -435,8 +446,8 @@ def main():
     # una chica para el resplandor (se agranda y queda borrosa) y una nítida.
     capa_suave = pygame.Surface((ANCHO // 4, ALTO // 4))
     capa_nitida = pygame.Surface((ANCHO, ALTO))
-    corazones = {True: graficos.crear_corazon(28, True), False: graficos.crear_corazon(28, False)}
-    imagenes_inicio = inicio.crear_imagenes()     # para las animaciones de la pantalla de inicio
+    iconos_vida = {True: graficos.crear_vida(26, True), False: graficos.crear_vida(26, False)}
+    imagenes_inicio = inicio.crear_imagenes(fuentes)     # para las animaciones de la pantalla de inicio
     paneles = {
         "puntos": graficos.crear_panel(200, 104),
         "vidas": graficos.crear_panel(160, 64),
@@ -575,7 +586,7 @@ def main():
             pantalla.blit(capa_nitida, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
 
             if estado == "jugando":
-                dibujar_hud(pantalla, juego, fuentes, paneles, corazones, destello)
+                dibujar_hud(pantalla, juego, fuentes, paneles, iconos_vida, destello)
             if estado != "jugando" or esta_pausado(juego):
                 pantalla.blit(capa_cartel, (0, 0))
             if estado == "nombres":

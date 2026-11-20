@@ -56,5 +56,6 @@ if __name__ == "__main__":
     guardar("lanzar", barrido(200, 1200, 0.5, 0.45, ruido=0.2))
     guardar("mortal", barrido(300, 30, 1.2, 0.9, ruido=1.0))
     guardar("vida", nota(784, 0.08) + nota(1047, 0.08) + nota(1319, 0.08) + nota(1568, 0.25))
+    guardar("sello", barrido(170, 60, 0.14, 0.8, ruido=0.5))
     guardar("perder", nota(392, 0.25) + nota(330, 0.25) + nota(262, 0.6))
     print("Sonidos generados en", CARPETA)

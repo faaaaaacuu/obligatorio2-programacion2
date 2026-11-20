@@ -10,8 +10,13 @@ FPS = 30
 TITULO = "Corte de Luz"
 PANTALLA_COMPLETA = True   # el juego se agranda a toda la pantalla (tecla F para cambiar)
 # Fuentes que se prueban en orden (si no está ninguna, pygame usa la suya)
-FUENTE_TITULO = "arialblack,impact,arial"
-FUENTE = "verdana,arial"
+# Estética: dojo japonés de noche, minimalista. Títulos con una serifa clásica
+# (Baskerville) y textos con una letra limpia (Optima). Songti queda solo para el
+# kanji: no tiene las letras con tilde ni la "¡" del español.
+FUENTE_TITULO = "baskerville,palatino,georgia"
+FUENTE = "optima,verdana,arial"
+FUENTE_KANJI = "songti"    # para el sello con el kanji 光 ("luz"); si no está, no se dibuja
+KANJI = "光"
 
 # --- Cámara y detección de la linterna ---
 INDICE_CAMARA = 0
@@ -31,32 +36,41 @@ HUECO_MAXIMO_CORTE = 0.12  # si la luz desaparece menos que esto (unos 3 cuadros
 # ~2750 px/s: imposible. Cruzar media pantalla en 0.25 s (~1900 px/s) sí vale.
 VELOCIDAD_MAXIMA_LUZ = 2500
 
-# --- Colores (R, G, B) ---
-BLANCO = (255, 255, 255)
+# --- Colores (R, G, B): laca negra, papel, bermellón y dorado ---
+BLANCO = (242, 234, 216)             # "blanco papel" (washi), un poco cálido
 NEGRO = (0, 0, 0)
-AMARILLO = (255, 220, 0)
-VERDE = (70, 220, 50)
-ROJO = (230, 40, 40)
-GRIS_OSCURO = (25, 25, 25)
-GRIS = (150, 150, 160)
+AMARILLO = (222, 184, 96)            # dorado
+VERDE = (130, 205, 140)              # verde jade suave
+ROJO = (205, 55, 45)                 # bermellón
+GRIS_OSCURO = (30, 26, 28)
+GRIS = (150, 140, 128)               # gris cálido
+LACA = (16, 13, 16)                  # negro laca de los paneles
+MADERA = (52, 34, 24)                # madera oscura (marco del shoji)
+MADERA_CLARA = (150, 110, 70)        # madera de la reja del shoji
+ROJO_FAROL = (200, 50, 40)           # papel rojo de los faroles
+LUZ_FAROL = (255, 170, 90)           # resplandor cálido de los faroles
 VERDE_HOJA = (60, 170, 50)
 MARRON = (110, 70, 30)
-CONTORNO = (20, 15, 30)              # borde oscuro de frutas y bombas (estilo dibujo animado)
+CONTORNO = (14, 10, 12)              # borde oscuro de frutas, bombas y textos (como tinta)
 # Filtro de color del punto de luz y su estela (1 jugador; se cambia con la tecla C)
 COLORES_ESPADA = [
-    ("Cian", (0, 220, 255)),
-    ("Verde", (60, 255, 90)),
-    ("Rosa", (255, 60, 200)),
-    ("Rojo", (255, 50, 50)),
-    ("Violeta", (170, 90, 255)),
-    ("Amarillo", (255, 220, 0)),
+    ("Oro", (240, 195, 90)),
+    ("Bermellón", (240, 70, 50)),
+    ("Jade", (80, 220, 170)),
+    ("Sakura", (245, 150, 195)),
+    ("Índigo", (110, 130, 240)),
+    ("Luna", (225, 230, 245)),
 ]
-COLOR_JUGADOR_1 = (80, 200, 255)     # celeste (versus, mitad izquierda)
-COLOR_JUGADOR_2 = (255, 140, 40)     # naranja (versus, mitad derecha)
-COLOR_FONDO = (10, 10, 35)           # tinte azulado que oscurece la cámara
-OSCURIDAD_CENTRO = 130               # 0-255: cuánto se oscurece la cámara en el centro...
-OSCURIDAD_BORDE = 225                # ...y en los bordes (viñeta)
-CAPA_CARTEL = (10, 10, 35, 200)      # más oscura, para los carteles
+COLOR_JUGADOR_1 = (80, 215, 180)     # jade (versus, mitad izquierda)
+COLOR_JUGADOR_2 = (240, 120, 60)     # bermellón anaranjado (versus, mitad derecha)
+COLOR_FONDO = (12, 11, 24)           # índigo de noche que oscurece la cámara
+OSCURIDAD_CENTRO = 140               # 0-255: cuánto se oscurece la cámara en el centro...
+OSCURIDAD_BORDE = 230                # ...y en los bordes (viñeta)
+CAPA_CARTEL = (10, 9, 16, 215)       # más oscura, para los carteles
+# Reja del shoji (panel de papel japonés) que se ve sobre la cámara
+SHOJI_COLUMNAS = 8
+SHOJI_FILAS = 5
+OPACIDAD_SHOJI = 45                  # 0-255: qué tan marcada se ve la reja (poco, para no molestar)
 COLOR_BOMBA_MORTAL = (180, 70, 255)  # violeta
 
 # Cada jugador tiene sus propias frutas, así en el versus se distinguen de un vistazo.
@@ -98,7 +112,7 @@ DESENFOQUE_BRILLO = 3      # cuánto se difumina el resplandor de la espada de l
 
 # --- Intro (lo primero que se ve al abrir el juego) ---
 DURACION_INTRO = 5.0       # segundos hasta que pasa sola a la pantalla de inicio
-COLORES_INTRO = [(0, 220, 255), (255, 60, 200)]   # color de cada uno de los dos espadazos
+COLORES_INTRO = [(240, 195, 90), (240, 70, 50)]   # color de cada espadazo: oro y bermellón
 
 # --- Pantalla de inicio: tarjetas con las reglas y su animación ---
 TARJETA_ANCHO = 172

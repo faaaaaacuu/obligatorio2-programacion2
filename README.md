@@ -193,6 +193,13 @@ normal no carga la bomba sin querer.
 
 No se usan imágenes de archivos: todo se dibuja con pygame en `graficos.py`.
 
+**Estética: dojo japonés de noche, minimalista.** Laca negra e índigo de base, acentos bermellón y
+dorado, textos color papel. La cámara se ve oscura, como detrás de un *shoji* (panel de papel) con su
+reja de madera. Hay faroles de papel rojo que se balancean, un *ensō* (el círculo zen pintado de una
+pincelada) en la intro y en la cuenta regresiva, y un sello rojo (*hanko*) con el kanji 光 ("luz").
+Las vidas son sellos redondos bermellón. Los títulos usan Baskerville y los textos Optima (el kanji
+usa Songti; si la compu no la tiene, el sello no se dibuja).
+
 - **Frutas con volumen:** cada fruta es una pila de óvalos, cada uno más chico, más claro y corrido
   hacia arriba a la izquierda, lo que da sensación de esfera. La imagen se arma una sola vez cuando
   la fruta aparece y después solo se gira (`rotozoom`).

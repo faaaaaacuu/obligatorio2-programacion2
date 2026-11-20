@@ -15,8 +15,9 @@ import random
 
 import pygame
 
-from ajustes import (BLANCO, NEGRO, CONTORNO, MARRON, VERDE_HOJA, GRIS,
-                     GROSOR_RASTRO)
+from ajustes import (BLANCO, NEGRO, CONTORNO, MARRON, VERDE_HOJA, GRIS, ROJO, AMARILLO,
+                     LACA, MADERA, MADERA_CLARA, ROJO_FAROL, SHOJI_COLUMNAS, SHOJI_FILAS,
+                     OPACIDAD_SHOJI, GROSOR_RASTRO)
 
 S = 2   # las imágenes se dibujan S veces más grandes y después se achican
 
@@ -361,8 +362,10 @@ def dibujar_texto(pantalla, mensaje, fuente, color, posicion, centrado=True):
 
 
 def crear_fondo(ancho, alto, color, alfa_centro, alfa_borde, pasos=24):
-    """Devuelve la capa que oscurece la cámara: más oscura en los bordes
-    (efecto "viñeta"), así la atención va al centro."""
+    """Devuelve la capa que va encima de la cámara: la oscurece (más en los
+    bordes, efecto "viñeta") y le pone la reja de madera de un shoji, el panel
+    de papel de los dojos japoneses. Así la cámara se ve como detrás de un shoji
+    de noche."""
     sup = pygame.Surface((ancho, alto), pygame.SRCALPHA)
     sup.fill((*color, alfa_borde))
     for i in range(pasos):
@@ -371,34 +374,128 @@ def crear_fondo(ancho, alto, color, alfa_centro, alfa_borde, pasos=24):
         rect = pygame.Rect(0, 0, int(ancho * (1.5 - 0.9 * t)), int(alto * (1.5 - 0.9 * t)))
         rect.center = (ancho // 2, alto // 2)
         pygame.draw.ellipse(sup, (*color, alfa), rect)
+
+    # La reja va en otra superficie que después se pega encima (así se mezcla
+    # con la viñeta en vez de reemplazarla).
+    reja = pygame.Surface((ancho, alto), pygame.SRCALPHA)
+    madera = (*MADERA_CLARA, OPACIDAD_SHOJI)
+    for i in range(1, SHOJI_COLUMNAS):
+        x = ancho * i // SHOJI_COLUMNAS
+        pygame.draw.line(reja, madera, (x, 0), (x, alto), 2)
+    for j in range(1, SHOJI_FILAS):
+        y = alto * j // SHOJI_FILAS
+        pygame.draw.line(reja, madera, (0, y), (ancho, y), 2)
+    # el marco: una viga arriba y abajo y dos postes a los costados, más oscuros
+    marco = (*MADERA, 235)
+    pygame.draw.rect(reja, marco, (0, 0, ancho, 7))
+    pygame.draw.rect(reja, marco, (0, alto - 7, ancho, 7))
+    pygame.draw.rect(reja, marco, (0, 0, 7, alto))
+    pygame.draw.rect(reja, marco, (ancho - 7, 0, 7, alto))
+    sup.blit(reja, (0, 0))
     return sup
 
 
 def crear_panel(ancho, alto):
-    """Devuelve un rectángulo redondeado semitransparente para poner el HUD encima."""
+    """Devuelve un panel de laca negra con un filete dorado, para poner textos encima."""
     sup = pygame.Surface((ancho, alto), pygame.SRCALPHA)
-    pygame.draw.rect(sup, (10, 10, 30, 170), sup.get_rect(), border_radius=14)
-    pygame.draw.rect(sup, (255, 255, 255, 60), sup.get_rect(), 2, border_radius=14)
+    rect = sup.get_rect()
+    pygame.draw.rect(sup, (*LACA, 215), rect, border_radius=4)
+    pygame.draw.rect(sup, (*AMARILLO, 190), rect, 1, border_radius=4)
+    pygame.draw.rect(sup, (*AMARILLO, 60), rect.inflate(-8, -8), 1, border_radius=2)
     return sup
 
 
-def crear_corazon(tam, lleno):
-    """Devuelve la imagen de un corazón: rojo si es una vida que queda, gris si
-    se perdió. Se dibuja al doble y se achica para que quede suave."""
-    lado = tam * 2 * S
+def crear_vida(tam, llena):
+    """Devuelve el ícono de una vida: un sello redondo bermellón, o un círculo
+    vacío si se perdió. Se dibuja al doble y se achica para que quede suave."""
+    lado = tam * S
     sup = pygame.Surface((lado, lado), pygame.SRCALPHA)
-    x, y = lado / 2, lado * 0.42
-    r = tam * 0.3 * S
-    color = (235, 45, 70) if lleno else (70, 70, 85)
-    for tono, extra in ((CONTORNO, 2.5 * S), (color, 0)):
-        pygame.draw.circle(sup, tono, (x - r, y - r * 0.3), r + extra)
-        pygame.draw.circle(sup, tono, (x + r, y - r * 0.3), r + extra)
-        pygame.draw.polygon(sup, tono, [(x - 2 * r - extra, y - r * 0.1),
-                                        (x + 2 * r + extra, y - r * 0.1),
-                                        (x, y + 1.9 * r + extra * 1.5)])
-    if lleno:
-        pygame.draw.circle(sup, mezclar(color, BLANCO, 0.6), (x - r * 1.1, y - r * 0.6), r * 0.35)
+    centro = (lado / 2, lado / 2)
+    r = lado * 0.42
+    if llena:
+        pygame.draw.circle(sup, CONTORNO, centro, r + S)
+        pygame.draw.circle(sup, ROJO, centro, r)
+        # anillo de adentro, como el borde de un sello
+        pygame.draw.circle(sup, mezclar(ROJO, BLANCO, 0.35), centro, r * 0.62, max(1, int(1.3 * S)))
+        pygame.draw.circle(sup, mezclar(ROJO, BLANCO, 0.6), (centro[0] - r * 0.4, centro[1] - r * 0.4), r * 0.16)
+    else:
+        pygame.draw.circle(sup, (36, 30, 32), centro, r)
+        pygame.draw.circle(sup, GRIS, centro, r, S)
     return achicar(sup)
+
+
+def dibujar_enso(sup, centro, radio, color, grosor, avance=1.0):
+    """Dibuja un ensō: el círculo zen pintado de una sola pincelada. Empieza
+    finito, engorda en el medio, termina "seco" y queda abierto.
+    `avance` (de 0 a 1) dice cuánto del trazo ya se pintó (para animarlo)."""
+    pasos = 180
+    largo = 0.9                         # el círculo no se cierra del todo
+    cx, cy = centro
+    for i in range(int(pasos * min(1.0, avance))):
+        f = i / pasos
+        if f > 0.8 and i % 3 == 0:
+            continue                    # al final al pincel le falta tinta: queda cortado
+        angulo = math.radians(-100) + f * largo * 2 * math.pi
+        ancho = grosor * (0.3 + 0.7 * math.sin(math.pi * min(1.0, f * 1.1)))
+        temblor = 1 + 0.025 * math.sin(f * 37)       # la mano no es perfecta
+        x = cx + math.cos(angulo) * radio * temblor
+        y = cy + math.sin(angulo) * radio * temblor
+        pygame.draw.circle(sup, color, (int(x), int(y)), max(1, int(ancho / 2)))
+
+
+def crear_farol(alto):
+    """Devuelve un farol de papel rojo (chōchin), como los que cuelgan en un dojo."""
+    ancho = int(alto * 0.62)
+    w, h = ancho * S, alto * S
+    sup = pygame.Surface((w, h), pygame.SRCALPHA)
+    cuerpo = pygame.Rect(0, int(h * 0.12), w, int(h * 0.76))
+    pygame.draw.ellipse(sup, CONTORNO, cuerpo.inflate(2 * S, 2 * S))
+    ovalo_con_volumen(sup, cuerpo.center, cuerpo.width, cuerpo.height, ROJO_FAROL)
+    # adentro hay una vela: el centro brilla más
+    ovalo_con_volumen(sup, cuerpo.center, cuerpo.width * 0.55, cuerpo.height * 0.6,
+                      mezclar(ROJO_FAROL, (255, 190, 120), 0.6), 8)
+    # las costillas de bambú del farol
+    for k in range(1, 6):
+        y = cuerpo.top + cuerpo.height * k / 6
+        dy = (y - cuerpo.centery) / (cuerpo.height / 2)
+        mitad = cuerpo.width / 2 * math.sqrt(max(0.0, 1 - dy * dy))
+        pygame.draw.line(sup, mezclar(ROJO_FAROL, NEGRO, 0.45),
+                         (cuerpo.centerx - mitad + S, y), (cuerpo.centerx + mitad - S, y), S)
+    # las tapas de arriba y de abajo
+    tapa = pygame.Rect(0, 0, int(w * 0.55), int(h * 0.13))
+    for y in (h * 0.07, h * 0.93):
+        tapa.center = (w // 2, int(y))
+        pygame.draw.rect(sup, CONTORNO, tapa, border_radius=2 * S)
+    return achicar(sup)
+
+
+def crear_sello(texto, fuente, tam):
+    """Devuelve un sello rojo (hanko) con un kanji, un poco torcido como si lo
+    hubieran estampado a mano. Devuelve None si la fuente no tiene ese kanji."""
+    metricas = fuente.metrics(texto)
+    if not metricas or metricas[0] is None or metricas[0][1] == 0:
+        return None
+    sup = pygame.Surface((tam, tam), pygame.SRCALPHA)
+    pygame.draw.rect(sup, ROJO, sup.get_rect(), border_radius=tam // 10)
+    pygame.draw.rect(sup, mezclar(ROJO, BLANCO, 0.3), sup.get_rect().inflate(-tam // 7, -tam // 7),
+                     max(1, tam // 30), border_radius=tam // 14)
+    letra = fuente.render(texto, True, BLANCO)
+    sup.blit(letra, letra.get_rect(center=(tam // 2, tam // 2 + 2)))
+    return pygame.transform.rotozoom(sup, -6, 1)
+
+
+def dibujar_farol(pantalla, farol, halo, x, largo_cuerda, tiempo, fase=0.0):
+    """Dibuja un farol colgado del techo en x, que se balancea despacio."""
+    angulo = math.radians(4 * math.sin(tiempo * 1.3 + fase))
+    largo = largo_cuerda + farol.get_height() / 2
+    cx = x + math.sin(angulo) * largo
+    cy = math.cos(angulo) * largo
+    arriba = (x + math.sin(angulo) * largo_cuerda, math.cos(angulo) * largo_cuerda)
+    pygame.draw.line(pantalla, CONTORNO, (x, 0), arriba, 2)
+    halo.set_alpha(int(150 + 30 * math.sin(tiempo * 2.1 + fase)))     # la vela titila
+    pantalla.blit(halo, halo.get_rect(center=(int(cx), int(cy))))
+    imagen = pygame.transform.rotozoom(farol, math.degrees(-angulo), 1)
+    pantalla.blit(imagen, imagen.get_rect(center=(int(cx), int(cy))))
 
 
 def dibujar_barra(pantalla, rect, fraccion, color):
