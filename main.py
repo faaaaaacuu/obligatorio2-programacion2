@@ -41,7 +41,8 @@ from graficos import dibujar_texto
 from objetos import Jugador
 
 CARPETA = os.path.dirname(os.path.abspath(__file__))
-NOMBRES_SONIDOS = ("corte", "bomba", "caida", "nivel", "ganar", "perder", "lanzar", "mortal", "vida", "sello")
+NOMBRES_SONIDOS = ("corte", "bomba", "caida", "nivel", "ganar", "perder", "lanzar", "mortal", "vida", "sello",
+                   "espadazo")
 MITAD = ANCHO // 2
 # En el menú todavía no hay modo elegido: se busca una luz en cada mitad.
 ZONAS_MENU = [(0, MITAD), (MITAD, ANCHO)]

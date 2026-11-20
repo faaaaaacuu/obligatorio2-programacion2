@@ -424,7 +424,7 @@ APARECE_TITULO = 1.6        # segundo en que aparece el título (después del se
 
 # Sonidos de la intro: (segundo en que suena, nombre del sonido)
 SELLO_INTRO = APARECE_TITULO + 0.75   # segundo en que se "estampa" el sello rojo
-SONIDOS_INTRO = [(ESPADAZOS[0][2], "corte"), (ESPADAZOS[1][2], "corte"),
+SONIDOS_INTRO = [(ESPADAZOS[0][2], "espadazo"), (ESPADAZOS[1][2], "espadazo"),
                  (APARECE_TITULO, "nivel"), (SELLO_INTRO, "sello")]
 
 

@@ -166,7 +166,7 @@ La tecla **M** muestra un recuadro abajo a la derecha con lo que se está detect
 | `graficos.py`        | Funciones que dibujan las frutas, bombas, corazones, paneles y el brillo de la espada |
 | `ajustes.py`         | Constantes: colores, frutas de cada jugador, tamaños, velocidades, niveles y rangos de detección |
 | `fuentes/`           | Tipografías Shojumaru y Potta One, con sus licencias (OFL)                |
-| `sonidos/`           | Efectos de sonido (corte, bomba, caída, nivel, ganar, perder, lanzar y bomba mortal) |
+| `sonidos/`           | Efectos de sonido. Los cortes suenan a katana (silbido + brillo metálico); también bomba, caída, vida, sello, etc. |
 | `generar_sonidos.py` | Script que generó los `.wav` (no hace falta correrlo para jugar)          |
 
 ## Cómo funciona la detección
