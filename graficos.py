@@ -18,6 +18,7 @@ import pygame
 from ajustes import (BLANCO, NEGRO, CONTORNO, MARRON, VERDE_HOJA, GRIS, ROJO, AMARILLO,
                      LACA, MADERA, MADERA_CLARA, ROJO_FAROL, SHOJI_COLUMNAS, SHOJI_FILAS,
                      OPACIDAD_SHOJI, GROSOR_RASTRO)
+from ajustes import ESPACIO_TECLA, SEPARACION_ATAJOS
 from ajustes import (CORTEZA_SANDIA, COLOR_BOMBA, COLOR_CUERPO_MORTAL, COLOR_MECHA,
                      COLOR_CRUZ_BOMBA, CHISPA_MECHA, COLOR_VIDA_VACIA, LUZ_VELA, COLOR_FONDO_BARRA)
 
@@ -347,6 +348,59 @@ def dibujar_espada(capa_suave, capa_nitida, puntos, color, luz):
 # ---------------------------------------------------------------------------
 # Pantalla e interfaz
 # ---------------------------------------------------------------------------
+
+def ancho_tecla(fuente, letra, alto):
+    """Devuelve el ancho de una tecla dibujada: cuadrada si es una letra, más
+    larga si dice una palabra (ESC, ESPACIO, ENTER)."""
+    return max(alto, fuente.size(letra)[0] + alto // 2)
+
+
+def dibujar_tecla_chica(pantalla, fuente, letra, x, y, alto, color):
+    """Dibuja una tecla como la de un teclado, con `letra` adentro y la esquina de
+    arriba a la izquierda en (x, y). Devuelve su ancho, para dibujar lo que sigue al lado."""
+    ancho = ancho_tecla(fuente, letra, alto)
+    tecla = pygame.Rect(int(x), int(y), ancho, alto)
+    radio = max(3, alto // 5)
+    pygame.draw.rect(pantalla, CONTORNO, tecla.move(0, 3), border_radius=radio)   # el costado de la tecla
+    pygame.draw.rect(pantalla, color, tecla, border_radius=radio)
+    # una línea más clara arriba, como la luz sobre el borde de la tecla
+    pygame.draw.line(pantalla, mezclar(color, BLANCO, 0.5), (tecla.left + radio, tecla.top + 2),
+                     (tecla.right - radio - 1, tecla.top + 2), 1)
+    pygame.draw.rect(pantalla, CONTORNO, tecla, 1, border_radius=radio)
+    imagen = fuente.render(letra, True, CONTORNO)
+    pantalla.blit(imagen, imagen.get_rect(center=tecla.center))
+    return ancho
+
+
+def medir_atajos(atajos, fuente_texto, fuente_tecla, alto):
+    """Devuelve el ancho total de una fila de atajos (las teclas y sus textos)."""
+    total = 0
+    for i, (teclas, texto) in enumerate(atajos):
+        for letra in teclas:
+            total += ancho_tecla(fuente_tecla, letra, alto) + ESPACIO_TECLA
+        total += fuente_texto.size(texto)[0]
+        if i < len(atajos) - 1:
+            total += SEPARACION_ATAJOS
+    return total
+
+
+def dibujar_atajos(pantalla, atajos, fuente_texto, fuente_tecla, alto, color_texto, color_tecla,
+                   posicion, centrado=True):
+    """Dibuja una fila de atajos: cada uno es (teclas, texto), por ejemplo
+    (("ESC",), "salir") o (("+", "-"), "brillo"). Cada tecla se dibuja como la de un
+    teclado y el texto va al lado. `posicion` es el centro de la fila (o, si `centrado`
+    es False, su punta izquierda), a la altura del medio de las teclas."""
+    x, y = posicion
+    if centrado:
+        x -= medir_atajos(atajos, fuente_texto, fuente_tecla, alto) // 2
+    for teclas, texto in atajos:
+        for letra in teclas:
+            x += dibujar_tecla_chica(pantalla, fuente_tecla, letra, x, y - alto // 2 - 1, alto,
+                                     color_tecla) + ESPACIO_TECLA
+        dibujar_texto(pantalla, texto, fuente_texto, color_texto,
+                      (x, y - fuente_texto.get_height() // 2), False)
+        x += fuente_texto.size(texto)[0] + SEPARACION_ATAJOS
+
 
 def dibujar_texto(pantalla, mensaje, fuente, color, posicion, centrado=True):
     """Escribe un texto con borde oscuro para que se lea sobre la cámara."""

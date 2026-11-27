@@ -39,7 +39,7 @@ import resultados
 from musica import Musica
 import vision
 from ajustes import *
-from graficos import dibujar_texto
+from graficos import dibujar_texto, dibujar_atajos, dibujar_tecla_chica
 from objetos import Jugador
 
 CARPETA = os.path.dirname(os.path.abspath(__file__))
@@ -363,7 +363,7 @@ def dibujar_boton_inicio(pantalla, fuentes):
     pygame.draw.polygon(pantalla, AMARILLO, [(x - 7, y), (x + 4, y - 7), (x + 4, y + 7)])
     dibujar_texto(pantalla, "INICIO", fuentes["media"], BLANCO if encima else AMARILLO,
                   (boton.left + 32, boton.centery - fuentes["media"].get_height() // 2), False)
-    dibujar_texto(pantalla, "ESC", fuentes["texto"], GRIS, (boton.right - 22, boton.centery))
+    dibujar_tecla_chica(pantalla, fuentes["texto"], "ESC", boton.right - 44, boton.centery - 11, 20, GRIS)
 
 
 def dibujar_nombres(pantalla, fuentes, nombres, cual, tiempo):
@@ -384,8 +384,9 @@ def dibujar_nombres(pantalla, fuentes, nombres, cual, tiempo):
         if activo and int(tiempo * 2) % 2 == 0:
             texto += "|"                     # cursor que titila
         dibujar_texto(pantalla, texto, fuentes["grande"], BLANCO if activo else GRIS, caja.center)
-    dibujar_texto(pantalla, "ENTER = listo     BORRAR = corregir     ESC = volver al inicio",
-                  fuentes["media"], VERDE, (centro, 400))
+    atajos = [(("ENTER",), "listo"), (("BORRAR",), "corregir"), (("ESC",), "volver al inicio")]
+    dibujar_atajos(pantalla, atajos, fuentes["media"], fuentes["chica"], ALTO_TECLA_MEDIA, BLANCO,
+                   AMARILLO, (centro, 400))
 
 
 def dibujar_carteles(pantalla, estado, juego, fuentes, hay_luz, umbral, tiempo, datos, color,
@@ -461,8 +462,9 @@ def dibujar_carteles(pantalla, estado, juego, fuentes, hay_luz, umbral, tiempo, 
             verbo = "Te faltó" if faltaron == 1 else "Te faltaron"
             dibujar_texto(pantalla, f"{verbo} {frutas(faltaron)} para superarlo", fuentes["media"],
                           BLANCO, (centro, medio + 45))
-        dibujar_texto(pantalla, "ESPACIO = otra vez     2 = versus     ESC = inicio",
-                      fuentes["media"], VERDE, (centro, medio + 130))
+        atajos = [(("ESPACIO",), "otra vez"), (("2",), "versus"), (("ESC",), "inicio")]
+        dibujar_atajos(pantalla, atajos, fuentes["media"], fuentes["chica"], ALTO_TECLA_MEDIA, BLANCO,
+                       AMARILLO, (centro, medio + 130))
 
     elif estado == "fin_versus":
         uno, dos = juego["jugadores"]
@@ -486,8 +488,10 @@ def dibujar_carteles(pantalla, estado, juego, fuentes, hay_luz, umbral, tiempo, 
                      f"{partida['frutas2']} {partida['jugador2']}    {ganador}")
             dibujar_texto(pantalla, linea, fuentes["chica"], BLANCO if i == 0 else GRIS,
                           (centro, 292 + i * 26))
-        dibujar_texto(pantalla, "ESPACIO = revancha     2 = otros nombres     1 = un jugador     ESC = inicio",
-                      fuentes["media"], VERDE, (centro, ALTO - 35))
+        atajos = [(("ESPACIO",), "revancha"), (("2",), "otros nombres"), (("1",), "un jugador"),
+                  (("ESC",), "inicio")]
+        dibujar_atajos(pantalla, atajos, fuentes["media"], fuentes["chica"], ALTO_TECLA_MEDIA, BLANCO,
+                       AMARILLO, (centro, ALTO - 35))
 
 
 # ---------------------------------------------------------------------------
@@ -733,7 +737,8 @@ def main():
                                  umbral, tiempo, datos, COLORES_ESPADA[indice_color], imagenes_inicio)
             # cómo volver a la pantalla de inicio: el botón, o mientras se juega solo un aviso chico
             if estado == "jugando" and not esta_pausado(juego):
-                dibujar_texto(pantalla, "ESC = inicio", fuentes["texto"], GRIS, (18, ALTO - 30), False)
+                dibujar_atajos(pantalla, [(("ESC",), "inicio")], fuentes["texto"], fuentes["texto"],
+                               ALTO_TECLA_CHICA, GRIS, GRIS, (18, ALTO - 24), False)
             elif estado != "menu":
                 dibujar_boton_inicio(pantalla, fuentes)
 

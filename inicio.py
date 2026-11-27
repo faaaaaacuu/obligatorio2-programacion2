@@ -14,7 +14,7 @@ import os
 import pygame
 
 import graficos
-from graficos import dibujar_texto, mezclar
+from graficos import dibujar_texto, mezclar, dibujar_atajos
 from ajustes import (ANCHO, ALTO, TARJETA_ANCHO, TARJETA_ALTO, TARJETA_ANIMACION_ALTO,
                      Y_MODOS, Y_LINTERNA, RADIO_FRUTA_DEMO,
                      FRUTAS_JUGADOR_1, FRUTAS_JUGADOR_2, COLORES_ESPADA, COLOR_JUGADOR_1,
@@ -24,6 +24,7 @@ from ajustes import (COLORES_EXPLOSION, COLOR_DESTELLO_TARJETA, COLOR_DESTELLO_I
                      TAMANIO_VIDA_TARJETA, PANEL_MODO, ESPADAZOS, APARECE_TITULO, SELLO_INTRO)
 from ajustes import (TUTORIAL_ENTRADA, TUTORIAL_SALIDA, TUTORIAL_PAUSA, TUTORIAL_ESCALA, TUTORIAL_GIRO,
                      TUTORIAL_FLOTE, TAMANIO_NUMERO_TUTORIAL, BOTON_SALTEAR, LACA)
+from ajustes import ALTO_TECLA_CHICA
 
 LUZ = COLORES_ESPADA[0][1]      # color de la luz en las animaciones
 CARPETA = os.path.dirname(os.path.abspath(__file__))
@@ -414,10 +415,12 @@ def dibujar_inicio(pantalla, fuentes, imagenes, tiempo, hay_luz, color, record, 
 
     # Las demás teclas, chiquitas abajo (el color de la luz se ve en el nombre del color)
     nombre_color, tono = color
-    dibujar_texto(pantalla, f"color de la luz: {nombre_color} (C)", fuentes["chica"], tono,
-                  (centro, ALTO - 40))
-    dibujar_texto(pantalla, f"R = ver las reglas   ·   +/- brillo ({umbral})   ·   M = ver la luz   ·   "
-                  "F = pantalla completa   ·   ESC = salir", fuentes["chica"], GRIS, (centro, ALTO - 16))
+    dibujar_atajos(pantalla, [(("C",), f"color de la luz: {nombre_color}")], fuentes["chica"],
+                   fuentes["texto"], ALTO_TECLA_CHICA, tono, tono, (centro, ALTO - 50))
+    atajos = [(("R",), "ver las reglas"), (("+", "-"), f"brillo ({umbral})"), (("M",), "ver la luz"),
+              (("F",), "pantalla completa"), (("ESC",), "salir")]
+    dibujar_atajos(pantalla, atajos, fuentes["chica"], fuentes["texto"], ALTO_TECLA_CHICA, GRIS, GRIS,
+                   (centro, ALTO - 20))
 
 
 # ---------------------------------------------------------------------------
@@ -637,6 +640,6 @@ def dibujar_tutorial(pantalla, fuentes, imagenes, indice, t, tiempo):
             pygame.draw.circle(pantalla, tarjeta.color, (px, ALTO - 24), 6)
         else:
             pygame.draw.circle(pantalla, GRIS, (px, ALTO - 24), 3)
-    dibujar_texto(pantalla, "→ siguiente   ·   ESPACIO = saltear", fuentes["chica"], GRIS,
-                  (18, ALTO - 34), False)
+    dibujar_atajos(pantalla, [(("→",), "siguiente"), (("ESPACIO",), "saltear")], fuentes["chica"],
+                   fuentes["texto"], ALTO_TECLA_CHICA, GRIS, AMARILLO, (18, ALTO - 36), False)
     dibujar_boton_saltear(pantalla, fuentes)

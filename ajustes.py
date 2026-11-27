@@ -164,6 +164,12 @@ PANEL_MODO = (340, 74)               # "1 jugador" / "versus" en la pantalla de 
 CAJA_NOMBRE = (360, 64)              # donde se escribe cada nombre del versus
 DT_MAXIMO = 0.1                      # segundos: tope del paso de tiempo si un cuadro tarda mucho
 
+# --- Teclas dibujadas (cada vez que se nombra una tecla, se dibuja como la de un teclado) ---
+ALTO_TECLA_CHICA = 22      # teclas al lado de textos chicos (abajo de la pantalla)
+ALTO_TECLA_MEDIA = 30      # teclas al lado de textos medianos (pantallas de fin)
+ESPACIO_TECLA = 6          # píxeles entre una tecla y lo que sigue
+SEPARACION_ATAJOS = 28     # píxeles entre un atajo y el siguiente en la misma fila
+
 # --- Botón para volver a la pantalla de inicio (también con ESC) ---
 BOTON_INICIO = (90, 14, 150, 40)     # x, y, ancho, alto (arriba a la izquierda, al lado del farol)
 
