@@ -171,7 +171,7 @@ en la lista `NIVELES` de `ajustes.py`:
 | 4     | 5               | rápida     | 18 %   |
 | 5     | 6               | muy rápida | 22 %   |
 
-Después del nivel 5, la función `reglas_de_nivel` (en `main.py`) hace cada nivel un poco más
+Después del nivel 5, la función `reglas_de_nivel` (en `partida.py`) hace cada nivel un poco más
 difícil que el anterior: más gravedad, menos espera entre frutas, frutas más chicas y más bombas.
 Tiene **topes** (`TOPE_...` en `ajustes.py`) para que nunca se vuelva imposible.
 
@@ -213,17 +213,25 @@ La tecla **M** muestra un recuadro abajo a la derecha con lo que se está detect
 
 | Archivo              | Qué tiene                                                                 |
 |----------------------|---------------------------------------------------------------------------|
-| `main.py`            | El bucle principal (eventos, actualizar, dibujar, `reloj.tick`) y los estados del juego |
+| `main.py`            | El bucle principal (eventos, actualizar, dibujar, `reloj.tick`): carga todo una vez y maneja los estados |
+| `partida.py`         | La partida: cómo empieza, cómo avanza cada cuadro, cómo termina, y lo que se dibuja encima (puntos, vidas, nombres, pausa, finales) |
+| `jugador.py`         | La clase `Jugador`: su luz, su rastro, sus frutas, sus vidas y la bomba mortal |
+| `objetos.py`         | Las clases `Fruta`, `BombaMortal`, `Pedazo`, `Particula` y `TextoFlotante` |
 | `vision.py`          | Todo lo de OpenCV: abrir la cámara, leer el cuadro y detectar la luz      |
-| `objetos.py`         | Las clases `Fruta`, `BombaMortal`, `Pedazo`, `Particula`, `TextoFlotante` y `Jugador` |
-| `inicio.py`          | La intro (espadazos y título), el tutorial y la pantalla de inicio con las reglas animadas |
+| `inicio.py`          | La intro, la pantalla de inicio y el abanico de colores                   |
+| `tarjetas.py`        | Las tarjetas con las reglas (y sus animaciones) y el tutorial            |
+| `graficos.py`        | Los dibujos: frutas, bombas y la espada de luz                            |
+| `interfaz.py`        | Textos, teclas dibujadas (que también son botones), paneles, faroles y sello |
 | `musica.py`          | La música de fondo: cambia de versión según la dificultad, con fundido     |
 | `resultados.py`      | Lee y guarda el récord y el historial del versus (`resultados.json`)     |
-| `graficos.py`        | Funciones que dibujan las frutas, bombas, corazones, paneles y el brillo de la espada |
 | `ajustes.py`         | Constantes: colores, frutas de cada jugador, tamaños, velocidades, niveles y rangos de detección |
+| `generar_sonidos.py` | Script que compuso la música y los efectos `.wav` (no hace falta correrlo para jugar) |
+| `instrumentos.py`    | Los instrumentos sintetizados que usa `generar_sonidos.py` (koto, taiko, katana, coro...) |
 | `fuentes/`           | Tipografías Shojumaru, Inter y Potta One, con sus licencias (OFL)        |
-| `sonidos/`           | Efectos de sonido (los cortes suenan a katana) y la música de fondo (`musica_menu.wav` y `musica_0.wav` a `musica_3.wav`) |
-| `generar_sonidos.py` | Script que generó los `.wav` (no hace falta correrlo para jugar)          |
+| `sonidos/`           | Efectos de sonido y las versiones de la música de fondo                   |
+
+El código está repartido por tema en archivos chicos (ninguno pasa de 500 líneas), para que cada
+uno se pueda leer y explicar por separado.
 
 ## Cómo funciona la detección
 

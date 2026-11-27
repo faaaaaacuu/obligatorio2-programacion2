@@ -6,6 +6,7 @@ Para cambiar la dificultad o la detección alcanza con tocar este archivo.
 # --- Ventana ---
 ANCHO = 960
 ALTO = 540
+MITAD = ANCHO // 2         # en el versus, cada jugador juega en media pantalla
 FPS = 30
 TITULO = "Light Fruit Ninja"
 PANTALLA_COMPLETA = True   # el juego se agranda a toda la pantalla (tecla F para cambiar)
