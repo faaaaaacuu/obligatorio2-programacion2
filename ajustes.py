@@ -193,10 +193,10 @@ BOTON_SALTEAR = (ANCHO - 170, ALTO - 56, 150, 40)   # x, y, ancho, alto (abajo a
 TARJETA_ANCHO = 172
 TARJETA_ALTO = 218
 TARJETA_ANIMACION_ALTO = 108   # alto de la parte de la tarjeta donde va la animación
-SEPARACION_TARJETAS = 12
-Y_TARJETAS = 106
 RADIO_FRUTA_DEMO = 20          # tamaño de las frutas en las animaciones
-DESFASE_TARJETAS = 0.7         # segundos de diferencia entre la animación de una tarjeta y la siguiente
+# --- Pantalla de inicio (las reglas ya no están acá: las explica el tutorial) ---
+Y_MODOS = 200              # altura de los dos paneles para elegir el modo
+Y_LINTERNA = 330           # altura del aviso "Linterna detectada" / "No veo la linterna"
 
 # --- La espada de luz ---
 LARGO_RASTRO = 12          # cuántas posiciones de la luz se dibujan en el rastro

@@ -16,7 +16,7 @@ import pygame
 import graficos
 from graficos import dibujar_texto, mezclar
 from ajustes import (ANCHO, ALTO, TARJETA_ANCHO, TARJETA_ALTO, TARJETA_ANIMACION_ALTO,
-                     SEPARACION_TARJETAS, Y_TARJETAS, RADIO_FRUTA_DEMO, DESFASE_TARJETAS,
+                     Y_MODOS, Y_LINTERNA, RADIO_FRUTA_DEMO,
                      FRUTAS_JUGADOR_1, FRUTAS_JUGADOR_2, COLORES_ESPADA, COLOR_JUGADOR_1,
                      COLOR_JUGADOR_2, COLOR_BOMBA_MORTAL, BLANCO, NEGRO, AMARILLO, VERDE,
                      ROJO, GRIS, CONTORNO, DESENFOQUE_BRILLO, COLORES_INTRO, KANJI, ARCHIVO_FUENTE_TEXTO, LUZ_FAROL, TITULO)
@@ -387,17 +387,8 @@ def dibujar_inicio(pantalla, fuentes, imagenes, tiempo, hay_luz, color, record, 
     graficos.dibujar_farol(pantalla, imagenes["farol"], imagenes["halo_farol"], 50, 10, tiempo)
     graficos.dibujar_farol(pantalla, imagenes["farol"], imagenes["halo_farol"], ANCHO - 50, 10, tiempo, 1.7)
     dibujar_titulo(pantalla, fuentes["titulo"], tiempo, imagenes["sello_chico"])
-
-    # Las tarjetas con las reglas (cada animación arranca un poco después que la anterior)
-    total = len(TARJETAS) * TARJETA_ANCHO + (len(TARJETAS) - 1) * SEPARACION_TARJETAS
-    x = (ANCHO - total) // 2
-    for i, tarjeta in enumerate(TARJETAS):
-        tarjeta.dibujar(pantalla, x + i * (TARJETA_ANCHO + SEPARACION_TARJETAS), Y_TARJETAS,
-                        fuentes, imagenes, tiempo + i * DESFASE_TARJETAS)
-
-    y = Y_TARJETAS + TARJETA_ALTO + 16
-    dibujar_texto(pantalla, "Tenés 3 vidas  ·  el juego no termina: se pone cada vez más difícil "
-                  " ·  jugá hasta perder", fuentes["chica"], BLANCO, (centro, y))
+    # Las reglas no se repiten acá: ya las mostró el tutorial (con R se vuelven a ver).
+    # Esta pantalla tiene solo lo necesario para empezar: el modo y si se ve la linterna.
 
     # Los dos modos, con la tecla para empezar cada uno
     if record > 0:
@@ -406,7 +397,7 @@ def dibujar_inicio(pantalla, fuentes, imagenes, tiempo, hay_luz, color, record, 
         detalle_solo = "¡Hacé el primer récord!"
     modos = (("1", "UN JUGADOR", detalle_solo),
              ("2", "VERSUS", "Dos linternas, pantalla dividida"))
-    y += 20
+    y = Y_MODOS
     for i, (tecla, titulo, detalle) in enumerate(modos):
         x = centro - 350 + i * 360
         pantalla.blit(imagenes["modo"], (x, y))
@@ -414,16 +405,18 @@ def dibujar_inicio(pantalla, fuentes, imagenes, tiempo, hay_luz, color, record, 
         dibujar_texto(pantalla, titulo, fuentes["media"], AMARILLO, (x + 76, y + 12), False)
         dibujar_texto(pantalla, detalle, fuentes["texto"], BLANCO, (x + 76, y + 44), False)
 
-    # Estado de la linterna y color elegido
-    y += 98
+    # Estado de la linterna: es lo único que hay que mirar antes de empezar
     if hay_luz:
-        dibujar_texto(pantalla, "Linterna detectada", fuentes["media"], VERDE, (centro - 190, y))
+        dibujar_texto(pantalla, "Linterna detectada", fuentes["media"], VERDE, (centro, Y_LINTERNA))
     else:
-        dibujar_texto(pantalla, "No veo la linterna", fuentes["media"], ROJO, (centro - 190, y))
+        dibujar_texto(pantalla, "Prendé la linterna y apuntala a la cámara", fuentes["media"], ROJO,
+                      (centro, Y_LINTERNA))
+
+    # Las demás teclas, chiquitas abajo (el color de la luz se ve en el nombre del color)
     nombre_color, tono = color
-    dibujar_texto(pantalla, f"C = color de la luz: {nombre_color}", fuentes["media"], tono,
-                  (centro + 190, y))
-    dibujar_texto(pantalla, f"+/- umbral de brillo ({umbral})   ·   M = ver la luz   ·   "
+    dibujar_texto(pantalla, f"color de la luz: {nombre_color} (C)", fuentes["chica"], tono,
+                  (centro, ALTO - 40))
+    dibujar_texto(pantalla, f"R = ver las reglas   ·   +/- brillo ({umbral})   ·   M = ver la luz   ·   "
                   "F = pantalla completa   ·   ESC = salir", fuentes["chica"], GRIS, (centro, ALTO - 16))
 
 

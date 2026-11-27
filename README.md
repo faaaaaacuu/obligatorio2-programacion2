@@ -46,8 +46,8 @@ la izquierda. Con **→** (o ENTER) se pasa a la siguiente, y con **ESPACIO**, *
 **SALTEAR** (abajo a la derecha) se va directo a la pantalla de inicio. Los tiempos están en
 `ajustes.py` (`TUTORIAL_...`).
 
-Después, la **pantalla de inicio** explica las reglas con 5 tarjetas animadas (cortar frutas, las bombas,
-las frutas que se caen, el triple y la bomba mortal del versus) y muestra cómo empezar cada modo.
+Después aparece la **pantalla de inicio**, que tiene solo lo necesario para empezar: los dos modos
+y si la cámara ve la linterna. Las reglas no se repiten ahí; con **R** se vuelve a ver el tutorial.
 
 1. Prender la linterna del celular y apuntarla hacia la cámara.
 2. En la pantalla de inicio tiene que aparecer **"Linterna detectada"** en verde.
@@ -175,6 +175,7 @@ borrar ese archivo.
 | C               | Cambiar el color de la luz y su estela (1 jugador)         |
 | F               | Pantalla completa / ventana                                |
 | → / ENTER       | En el tutorial: pasar a la siguiente tarjeta               |
+| R               | En la pantalla de inicio: volver a ver el tutorial         |
 | ESPACIO         | En la intro y el tutorial: saltearlos                      |
 | ESC             | Volver a la pantalla de inicio (en la pantalla de inicio: salir) |
 | Botón INICIO    | Volver a la pantalla de inicio con un clic (arriba a la izquierda) |

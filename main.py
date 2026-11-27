@@ -615,6 +615,10 @@ def main():
                     juego = nueva_partida(juego["modo"], nombres, datos["record"],
                                           COLORES_ESPADA[indice_color][1])
                     estado = "cartel"
+                elif evento.key == pygame.K_r and estado == "menu":
+                    # volver a ver el tutorial con las reglas
+                    estado = "tutorial"
+                    tarjeta_tutorial, tiempo_tutorial = 0, 0.0
                 elif evento.key == pygame.K_f:
                     pygame.display.toggle_fullscreen()   # en ventana aparece la X para cerrar
                 elif evento.key == pygame.K_c:
