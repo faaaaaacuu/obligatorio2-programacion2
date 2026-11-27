@@ -17,6 +17,13 @@ Se necesita Python 3.9 o más nuevo, una cámara web y un celular con linterna.
 pip install -r requirements.txt
 ```
 
+Eso instala las tres bibliotecas que usa el juego:
+
+- **pygame** (`pip install pygame`): la ventana, el dibujo, los sonidos y el teclado.
+- **opencv-python** (`pip install opencv-python`): la cámara y la detección de la luz (solo en `vision.py`).
+- **numpy** (`pip install numpy`): la usa `generar_sonidos.py` para sintetizar la música. Para jugar
+  no hace falta, porque los `.wav` ya vienen hechos, pero OpenCV la instala igual.
+
 En macOS, la primera vez el sistema pide permiso para usar la cámara
 (a la Terminal o a VS Code, según desde dónde se corra).
 
@@ -111,7 +118,17 @@ rato se acepta, pero como un trazo nuevo, sin unir los dos lugares.
 cambia entre cian, verde, rosa, rojo, violeta y amarillo (también en medio de la partida). En el
 versus cada jugador tiene el suyo: celeste a la izquierda y naranja a la derecha.
 
-Funciona mejor en un cuarto con poca luz y sin lámparas o ventanas detrás del jugador.
+### En qué condiciones funciona mejor
+
+- **Luz:** un cuarto con poca luz. Cuanto más oscuro, más se distingue la linterna del resto.
+- **Fondo:** sin lámparas, ventanas, pantallas ni paredes blancas brillantes detrás del jugador,
+  porque la cámara las puede tomar como la linterna (o como su reflejo).
+- **Distancia:** lo bastante lejos para que, con el brazo estirado, la linterna llegue a los bordes
+  de la imagen. Si la linterna está muy lejos, la mancha queda más chica que `AREA_MINIMA_LUZ` y no
+  se detecta; si está muy cerca, la luz llena media imagen y el punto tiembla.
+- La linterna tiene que **apuntar a la cámara**: de costado brilla mucho menos.
+- Si algo falla, la tecla **M** muestra lo que la cámara está tomando como luz, y con **+** / **-**
+  se ajusta el umbral.
 
 ## Dificultad
 
@@ -171,7 +188,7 @@ La tecla **M** muestra un recuadro abajo a la derecha con lo que se está detect
 | `graficos.py`        | Funciones que dibujan las frutas, bombas, corazones, paneles y el brillo de la espada |
 | `ajustes.py`         | Constantes: colores, frutas de cada jugador, tamaños, velocidades, niveles y rangos de detección |
 | `fuentes/`           | Tipografías Shojumaru y Potta One, con sus licencias (OFL)                |
-| `sonidos/`           | Efectos de sonido (los cortes suenan a katana) y la música de fondo `musica.wav` |
+| `sonidos/`           | Efectos de sonido (los cortes suenan a katana) y la música de fondo (`musica_menu.wav` y `musica_0.wav` a `musica_3.wav`) |
 | `generar_sonidos.py` | Script que generó los `.wav` (no hace falta correrlo para jugar)          |
 
 ## Cómo funciona la detección
@@ -276,3 +293,34 @@ están incluidos). Es todo original: no usa grabaciones ni canciones de nadie.
   caer el golpe un o-daiko enorme, la explosión y un gong que queda retumbando. El grito es una voz
   sintetizada: armónicos de una nota grave filtrados por las formantes de las vocales, pasando de
   la "i" a la "a", con la nota que sube de golpe y cae, más ronquera y aire.
+
+## Origen y licencia de los recursos
+
+- **Sonidos y música:** son propios, generados por código con `generar_sonidos.py`. No usan
+  grabaciones ni muestras de nadie.
+- **Gráficos:** propios, dibujados con pygame en `graficos.py`. El juego no carga imágenes de archivos.
+- **Tipografías:** no son propias. Tienen licencia libre SIL Open Font License 1.1, y el texto de cada
+  licencia está al lado de la fuente, en la carpeta `fuentes/`:
+  - **Shojumaru**, de Brian J. Bonislawsky (Astigmatic), 2012 (`fuentes/OFL-Shojumaru.txt`).
+  - **Potta One**, de The Potta Project Authors, 2020, https://github.com/go108go/Potta (`fuentes/OFL-PottaOne.txt`).
+
+## Uso de inteligencia artificial
+
+Usé **Claude** (Anthropic) como asistente durante el desarrollo:
+
+- **Programación:** para escribir y corregir partes del código (la detección de la luz en `vision.py`,
+  la física de las frutas, el modo versus, la detección del círculo de la bomba mortal) y para
+  buscar errores.
+- **Sonido:** para armar `generar_sonidos.py`, el script que sintetiza los efectos y la música.
+- **Documentación:** para redactar y ordenar este README, agregar docstrings y pasar las constantes
+  a `ajustes.py`.
+
+Prompts más relevantes:
+
+- "checkea la letra del obligatorio 2. fijate si cumple con todo el juego que es cortar fruta con la luz"
+- "podes hacer los commits y push desde aca? arregla el readme. agrega docstrings. cambia lo de ajustes.py, ponelo todo ahi."
+
+Referencia (APA):
+
+Claude. (2026). *Prompts utilizados para la programación, los sonidos y la documentación del juego
+Corte de Luz* [Generación de código y texto]. Recuperado de https://claude.ai
