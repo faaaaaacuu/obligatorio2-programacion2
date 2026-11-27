@@ -120,6 +120,8 @@ ALTURA_MAXIMA = 0.85
 VELOCIDAD_LATERAL = (15, 70)   # píxeles por segundo hacia el centro (mín, máx)
 VELOCIDAD_GIRO = (40, 160) # grados por segundo que giran las frutas mientras vuelan
 SEPARACION_PEDAZOS = 130   # velocidad con la que se separan las dos mitades al cortar
+SALTO_PEDAZOS = 40         # píxeles por segundo hacia arriba que ganan las mitades al cortarse
+GIRO_PEDAZOS = (60, 180)   # grados por segundo que giran las mitades (mín, máx)
 
 # --- Partículas (jugo y explosiones) ---
 GOTAS_POR_CORTE = 14
@@ -136,6 +138,9 @@ VELOCIDAD_CHISPAS_TIRAR = (100, 350)
 RADIO_CHISPAS_TIRAR = (3, 8)
 GRAVEDAD_PARTICULAS = 700
 DURACION_TEXTO_FLOTANTE = 0.7   # segundos que se ve el "+1" que sube desde la fruta
+VELOCIDAD_TEXTO_FLOTANTE = 70   # píxeles por segundo que sube el "+1"
+EMPUJE_PARTICULAS = 120    # píxeles por segundo hacia arriba con que sale cada gota o chispa
+VIDA_PARTICULAS = (0.4, 0.9)    # segundos que dura cada partícula (mín, máx)
 DESENFOQUE_BRILLO = 3      # cuánto se difumina el resplandor de la espada de luz
 
 # --- Sonido ---

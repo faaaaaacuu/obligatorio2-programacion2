@@ -22,7 +22,8 @@ from ajustes import (ALTO, REBOTE_EN_EL_BORDE, ALTURA_MINIMA, ALTURA_MAXIMA, VEL
 from ajustes import (COLORES_EXPLOSION, COLORES_EXPLOSION_MORTAL, CHISPAS_AL_TIRAR_MORTAL,
                      VELOCIDAD_JUGO, RADIO_JUGO, VELOCIDAD_CHISPAS, RADIO_CHISPAS,
                      VELOCIDAD_CHISPAS_MORTAL, RADIO_CHISPAS_MORTAL,
-                     VELOCIDAD_CHISPAS_TIRAR, RADIO_CHISPAS_TIRAR)
+                     VELOCIDAD_CHISPAS_TIRAR, RADIO_CHISPAS_TIRAR, SALTO_PEDAZOS, GIRO_PEDAZOS,
+                     VELOCIDAD_TEXTO_FLOTANTE, EMPUJE_PARTICULAS, VIDA_PARTICULAS)
 
 
 def distancia_punto_segmento(punto, inicio, fin):
@@ -224,11 +225,11 @@ class Pedazo:
         self.gravedad = fruta.gravedad
         self.imagen = graficos.crear_imagen_mitad(fruta.tipo, fruta.radio, lado)
         self.angulo = angulo
-        self.giro = random.uniform(60, 180) * lado
+        self.giro = random.uniform(*GIRO_PEDAZOS) * lado
         # Cada mitad se aleja del corte hacia su lado (perpendicular al corte).
         a = math.radians(angulo)
         self.vx = fruta.vx + SEPARACION_PEDAZOS * lado * math.cos(a)
-        self.vy = min(fruta.vy, 0) - 40 - SEPARACION_PEDAZOS * lado * math.sin(a)
+        self.vy = min(fruta.vy, 0) - SALTO_PEDAZOS - SEPARACION_PEDAZOS * lado * math.sin(a)
 
     def actualizar(self, dt):
         """Cae con la gravedad y gira mientras se aleja del corte."""
@@ -256,10 +257,10 @@ class Particula:
         rapidez = random.uniform(*velocidad)
         self.x, self.y = x, y
         self.vx = math.cos(angulo) * rapidez
-        self.vy = math.sin(angulo) * rapidez - 120     # un poco hacia arriba
+        self.vy = math.sin(angulo) * rapidez - EMPUJE_PARTICULAS   # un poco hacia arriba
         self.color = color
         self.radio = random.uniform(*radio)
-        self.vida = random.uniform(0.4, 0.9)           # segundos que dura
+        self.vida = random.uniform(*VIDA_PARTICULAS)           # segundos que dura
         self.edad = 0.0
 
     def actualizar(self, dt):
@@ -292,7 +293,7 @@ class TextoFlotante:
 
     def actualizar(self, dt):
         """Sube despacio y suma tiempo a su edad."""
-        self.y -= 70 * dt
+        self.y -= VELOCIDAD_TEXTO_FLOTANTE * dt
         self.edad += dt
 
     def viva(self):
