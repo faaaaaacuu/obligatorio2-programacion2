@@ -344,8 +344,7 @@ están incluidos). Es todo original: no usa grabaciones ni canciones de nadie.
 - **Sonidos y música:** son propios, generados por código con `generar_sonidos.py`. No usan
   grabaciones ni muestras de nadie.
 - **Gráficos:** propios, dibujados con pygame en `graficos.py`. El juego no carga imágenes de archivos.
-- **Tipografías:** no son propias. Tienen licencia libre SIL Open Font License 1.1, y el texto de cada
-  licencia está al lado de la fuente, en la carpeta `fuentes/`:
+- **Tipografías:** no son propias. Tienen licencia libre SIL Open Font License 1.1, y el texto de cada licencia está al lado de la fuente, en la carpeta `fuentes/`:
   - **Shojumaru**, de Brian J. Bonislawsky (Astigmatic), 2012 (`fuentes/OFL-Shojumaru.txt`).
   - **Potta One**, de The Potta Project Authors, 2020, https://github.com/go108go/Potta (`fuentes/OFL-PottaOne.txt`).
   - **Inter** (Medium y SemiBold), de The Inter Project Authors, 2016-2023, https://github.com/rsms/inter (`fuentes/OFL-Inter.txt`).
@@ -372,22 +371,15 @@ y redactados a partir de lo que le pedí):
 > pantalla de inicio muestra las 5 reglas en tarjetas animadas, todas juntas.
 > **Problema:** es mucha información de golpe y nadie las lee.
 > **Solución:** que al abrir el juego, después de la intro, las tarjetas pasen de a una, grandes, al
-> estilo motion graphics, con los efectos de sonido del juego en el momento en que pasa cada cosa.
-> Se tiene que poder pasar a la siguiente o saltear todo, y la pantalla de inicio tiene que quedar
-> solo con lo necesario para empezar.
+estilo motion graphics, con los efectos de sonido del juego en el momento en que pasa cada cosa. Se tiene que poder pasar a la siguiente o saltear todo, y la pantalla de inicio tiene que quedar solo con lo necesario para empezar.
 
 > **Contexto:** el juego se maneja solo con teclas que hay que saber de antemano.
-> **Problema:** alguien que lo abre por primera vez no sabe qué hacer, y si aprieta ESC sin querer
-> pierde la partida.
-> **Solución:** que funcione como cualquier programa. Cada tecla que aparece en pantalla tiene que ser
-> también un botón que se pueda clickear, la partida se tiene que pausar con P o al cambiar de
-> ventana, tiene que preguntar antes de abandonar una partida y Cmd+Q / Ctrl+Q tienen que cerrarlo.
+> **Problema:** alguien que lo abre por primera vez no sabe qué hacer, y si aprieta ESC sin querer pierde la partida.
+> **Solución:** que funcione como cualquier programa. Cada tecla que aparece en pantalla tiene que ser también un botón que se pueda clickear, la partida se tiene que pausar con P o al cambiar de ventana, tiene que preguntar antes de abandonar una partida y Cmd+Q / Ctrl+Q tienen que cerrarlo.
 
 > **Contexto:** `main.py` tiene más de 900 líneas y en la defensa tengo que explicar el código.
 > **Problema:** así es difícil de leer y de explicar.
-> **Solución:** repartir el código por tema en archivos de entre 300 y 500 líneas, sin cambiar lo que
-> hace el juego, con todo lo de OpenCV en `vision.py` como pide la letra, y comprobar que no quede
-> ningún import roto.
+> **Solución:** repartir el código por tema en archivos de entre 300 y 500 líneas, sin cambiar lo que hace el juego, con todo lo de OpenCV en `vision.py` como pide la letra, y comprobar que no quede ningún import roto.
 
 Referencia (APA):
 
