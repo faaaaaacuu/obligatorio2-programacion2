@@ -79,6 +79,8 @@ momento en que pasás el récord aparece **"¡NUEVO RÉCORD!"**. El objetivo es 
 ### Modo versus (2 jugadores)
 
 Antes de empezar, cada jugador **escribe su nombre** (ENTER para confirmar, ESC para volver).
+Al confirmar el del Jugador 1 queda fijo, con un tilde, pero se puede volver a corregir con **←**,
+con un clic en su caja o borrando cuando el nombre del Jugador 2 todavía está vacío.
 La pantalla se divide al medio: el **Jugador 1** juega en la mitad izquierda y el **Jugador 2**
 en la derecha, cada uno con la linterna de su celular. Cada mitad tiene sus propias vidas y
 puntos, y la cámara busca una luz distinta en cada mitad.
