@@ -60,6 +60,7 @@ class SonidoVariado:
     Se usa igual que un Sound: sonidos["corte"].play()."""
 
     def __init__(self, versiones):
+        """Recibe la lista de versiones (objetos Sound) del mismo sonido."""
         self.versiones = versiones
         self.anterior = None        # índice de la última que sonó
 
@@ -71,6 +72,7 @@ class SonidoVariado:
         return random.choice(opciones)
 
     def play(self):
+        """Toca una versión al azar, distinta de la que sonó la vez anterior."""
         self.anterior = self.elegir()
         self.versiones[self.anterior].play()
 
@@ -493,6 +495,8 @@ def dibujar_carteles(pantalla, estado, juego, fuentes, hay_luz, umbral, tiempo, 
 # ---------------------------------------------------------------------------
 
 def main():
+    """Abre la ventana y la cámara, carga todo una sola vez y corre el bucle principal
+    (eventos, actualizar, dibujar, reloj.tick). Al cerrar la ventana libera la cámara."""
     pygame.init()
     # SCALED: el juego sigue midiendo ANCHO x ALTO y pygame lo agranda a la pantalla.
     opciones = pygame.SCALED

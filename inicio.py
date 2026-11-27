@@ -304,12 +304,14 @@ class Tarjeta:
     que se repite mostrando qué pasa."""
 
     def __init__(self, titulo, texto, color, animacion):
+        """Guarda el título, el texto, el color de la rayita y la función que anima la tarjeta."""
         self.titulo = titulo
         self.texto = texto
         self.color = color
         self.animacion = animacion      # una de las funciones animar_...
 
     def dibujar(self, pantalla, x, y, fuentes, imagenes, tiempo):
+        """Dibuja la tarjeta en (x, y): el panel, la animación arriba y el título y el texto abajo."""
         pantalla.blit(imagenes["tarjeta"], (x, y))
         # una rayita de color arriba, para distinguir cada regla
         pygame.draw.rect(pantalla, self.color, (x + 14, y + 7, TARJETA_ANCHO - 28, 4), border_radius=2)

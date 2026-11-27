@@ -16,6 +16,7 @@ class Musica:
     versión se apaga en un canal, la nueva entra en el otro (un "fundido")."""
 
     def __init__(self, carpeta):
+        """Carga las versiones de la música de la carpeta del juego y reserva sus canales."""
         # Todas las versiones se cargan una sola vez, antes del bucle.
         # Si falta algún archivo, el juego sigue sin música.
         self.pistas = []

@@ -417,6 +417,7 @@ def componer_musica(intensidad=0):
     # Zumbido grave (Re y La) que "respira" despacio. Cada onda tiene que dar un
     # número entero de vueltas en toda la pieza; si no, al repetirse haría "click".
     def vueltas_enteras(frecuencia):
+        """Redondea la frecuencia para que dé un número entero de vueltas en todo el loop: así, al repetirse, no se nota el corte."""
         return round(frecuencia * total) / total
     re, la, respiro_f = vueltas_enteras(NOTAS["D2"]), vueltas_enteras(NOTAS["A2"]), 7 / total
     for i in range(largo):
@@ -808,6 +809,7 @@ VARIANTES_CORTE = [
 
 
 def guardar(nombre, muestras):
+    """Guarda las muestras (números entre -1 y 1) como un .wav mono de 16 bits en la carpeta sonidos/."""
     ruta = os.path.join(CARPETA, nombre + ".wav")
     with wave.open(ruta, "w") as archivo:
         archivo.setnchannels(1)

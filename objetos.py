@@ -112,6 +112,8 @@ class Fruta:
     de alguno de los tipos de `frutas` (cada jugador tiene las suyas)."""
 
     def __init__(self, reglas, x_min, x_max, frutas):
+        """Crea una fruta (o una bomba, según la probabilidad del nivel) abajo de la
+        pantalla, entre x_min y x_max, con la velocidad justa para subir y volver a caer."""
         self.radio = random.randint(*reglas["radio"])
         ancho_zona = x_max - x_min
         self.x = float(random.randint(int(x_min + ancho_zona * 0.15),
@@ -177,6 +179,7 @@ class Fruta:
         return salpicar(self.x, self.y, colores, GOTAS_POR_CORTE, VELOCIDAD_JUGO, RADIO_JUGO)
 
     def dibujar(self, pantalla):
+        """Dibuja la fruta girada; si es una bomba, también la chispa de la mecha."""
         pegar_centrado(pantalla, self.imagen, self.x, self.y, self.angulo)
         if self.bomba:
             mx, my = graficos.punta_de_mecha(self.radio)
@@ -188,6 +191,7 @@ class BombaMortal(Fruta):
     si la corta, se queda sin vidas y pierde. Es una Fruta, pero se dibuja distinto."""
 
     def __init__(self, x_min, x_max):
+        """Crea la bomba mortal en la zona del rival: más grande, más lenta y con un halo violeta."""
         reglas = {"radio": (RADIO_BOMBA_MORTAL, RADIO_BOMBA_MORTAL),
                   "gravedad": GRAVEDAD_BOMBA_MORTAL, "bombas": 1}
         super().__init__(reglas, x_min, x_max, [None])
@@ -197,10 +201,12 @@ class BombaMortal(Fruta):
         self.tiempo = 0.0           # para que el halo "lata"
 
     def actualizar(self, dt):
+        """Se mueve como cualquier fruta y avanza el tiempo para que el halo lata."""
         super().actualizar(dt)
         self.tiempo += dt
 
     def dibujar(self, pantalla):
+        """Dibuja el halo, que se prende y se apaga, y encima la bomba."""
         self.halo.set_alpha(int(155 + 100 * math.sin(self.tiempo * 7)))
         pegar_centrado(pantalla, self.halo, self.x, self.y)
         super().dibujar(pantalla)
@@ -210,6 +216,8 @@ class Pedazo:
     """Media fruta que sale volando, girando, después de un corte."""
 
     def __init__(self, fruta, lado, angulo):
+        """Crea una de las dos mitades de `fruta`. `lado` es -1 o 1 (para qué lado sale)
+        y `angulo` es la dirección del corte."""
         self.x = fruta.x
         self.y = fruta.y
         self.radio = fruta.radio
@@ -223,6 +231,7 @@ class Pedazo:
         self.vy = min(fruta.vy, 0) - 40 - SEPARACION_PEDAZOS * lado * math.sin(a)
 
     def actualizar(self, dt):
+        """Cae con la gravedad y gira mientras se aleja del corte."""
         self.vy += self.gravedad * dt
         self.x += self.vx * dt
         self.y += self.vy * dt
@@ -233,6 +242,7 @@ class Pedazo:
         return self.y - self.radio > ALTO
 
     def dibujar(self, pantalla):
+        """Dibuja la mitad girada en su posición."""
         pegar_centrado(pantalla, self.imagen, self.x, self.y, self.angulo)
 
 
@@ -240,6 +250,8 @@ class Particula:
     """Una gotita de jugo o una chispa de explosión: sale disparada, cae y se achica."""
 
     def __init__(self, x, y, color, velocidad, radio):
+        """Crea una gota o chispa que sale para un lado al azar, con una rapidez
+        y un tamaño elegidos dentro de los rangos `velocidad` y `radio`."""
         angulo = random.uniform(0, 2 * math.pi)
         rapidez = random.uniform(*velocidad)
         self.x, self.y = x, y
@@ -251,6 +263,7 @@ class Particula:
         self.edad = 0.0
 
     def actualizar(self, dt):
+        """Cae con la gravedad y suma tiempo a su edad."""
         self.vy += GRAVEDAD_PARTICULAS * dt
         self.x += self.vx * dt
         self.y += self.vy * dt
@@ -261,6 +274,7 @@ class Particula:
         return self.edad < self.vida
 
     def dibujar(self, pantalla):
+        """Dibuja la partícula como un círculo que se achica a medida que envejece."""
         radio = self.radio * (1 - self.edad / self.vida)   # se va achicando
         if radio >= 1:
             pygame.draw.circle(pantalla, self.color, (int(self.x), int(self.y)), radio)
@@ -270,12 +284,14 @@ class TextoFlotante:
     """Un texto (como "+1") que sube desde la fruta cortada y se desvanece."""
 
     def __init__(self, x, y, texto, color):
+        """Crea un texto (por ejemplo "+1") en (x, y) con su color."""
         self.x, self.y = x, y
         self.texto = texto
         self.color = color
         self.edad = 0.0
 
     def actualizar(self, dt):
+        """Sube despacio y suma tiempo a su edad."""
         self.y -= 70 * dt
         self.edad += dt
 
@@ -284,6 +300,7 @@ class TextoFlotante:
         return self.edad < DURACION_TEXTO_FLOTANTE
 
     def dibujar(self, pantalla, fuente):
+        """Dibuja el texto con sombra; se va haciendo transparente hasta desaparecer."""
         transparencia = int(255 * (1 - self.edad / DURACION_TEXTO_FLOTANTE))
         for color, corrida in ((NEGRO, 2), (self.color, 0)):
             imagen = fuente.render(self.texto, True, color)
@@ -297,6 +314,8 @@ class Jugador:
     de su luz, sus vidas y sus puntos."""
 
     def __init__(self, nombre, color, x_min, x_max, frutas, con_bomba=False):
+        """Crea un jugador con su nombre, el color de su espada, su zona de la pantalla
+        (de x_min a x_max), sus tipos de fruta y si puede usar la bomba mortal."""
         self.nombre = nombre
         self.color = color          # color de su espada de luz y de su texto
         self.x_min = x_min
