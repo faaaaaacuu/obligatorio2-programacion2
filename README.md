@@ -181,7 +181,7 @@ Se sube de nivel cada 10 frutas jugando solo, y cada 20 segundos en el versus
 ## Resultados guardados
 
 El récord y las partidas del versus se guardan en `resultados.json`, en la carpeta del juego
-(se crea solo la primera vez). Lo maneja `resultados.py`. Para borrar todo, alcanza con
+(se crea solo la primera vez). Lo maneja `partida.py` (las funciones `cargar_resultados`, `registrar_puntaje` y `registrar_versus`). Para borrar todo, alcanza con
 borrar ese archivo.
 
 ## Controles
@@ -213,24 +213,22 @@ La tecla **M** muestra un recuadro abajo a la derecha con lo que se está detect
 
 | Archivo              | Qué tiene                                                                 |
 |----------------------|---------------------------------------------------------------------------|
-| `main.py`            | El bucle principal (eventos, actualizar, dibujar, `reloj.tick`): carga todo una vez y maneja los estados |
-| `partida.py`         | La partida: cómo empieza, cómo avanza cada cuadro, cómo termina, y lo que se dibuja encima (puntos, vidas, nombres, pausa, finales) |
+| `main.py`            | El bucle principal (eventos, actualizar, dibujar, `reloj.tick`), la carga de sonidos y fuentes, y la música de fondo (clase `Musica`, que cambia de versión según la dificultad, con fundido) |
+| `partida.py`         | La partida: cómo empieza, cómo avanza cada cuadro, cómo termina, lo que se dibuja encima (puntos, vidas, pausa, finales) y el récord y el historial guardados en `resultados.json` |
 | `jugador.py`         | La clase `Jugador`: su luz, su rastro, sus frutas, sus vidas y la bomba mortal |
 | `objetos.py`         | Las clases `Fruta`, `BombaMortal`, `Pedazo`, `Particula` y `TextoFlotante` |
 | `vision.py`          | Todo lo de OpenCV: abrir la cámara, leer el cuadro y detectar la luz      |
-| `inicio.py`          | La intro, la pantalla de inicio y el abanico de colores                   |
+| `inicio.py`          | La intro, la pantalla de inicio, los nombres del versus y el abanico de colores |
 | `tarjetas.py`        | Las tarjetas con las reglas (y sus animaciones) y el tutorial            |
 | `graficos.py`        | Los dibujos: frutas, bombas y la espada de luz                            |
 | `interfaz.py`        | Textos, teclas dibujadas (que también son botones), paneles, faroles y sello |
-| `musica.py`          | La música de fondo: cambia de versión según la dificultad, con fundido     |
-| `resultados.py`      | Lee y guarda el récord y el historial del versus (`resultados.json`)     |
 | `ajustes.py`         | Constantes: colores, frutas de cada jugador, tamaños, velocidades, niveles y rangos de detección |
 | `generar_sonidos.py` | Script que compuso la música y los efectos `.wav` (no hace falta correrlo para jugar) |
 | `instrumentos.py`    | Los instrumentos sintetizados que usa `generar_sonidos.py` (koto, taiko, katana, coro...) |
 | `fuentes/`           | Tipografías Shojumaru, Inter y Potta One, con sus licencias (OFL)        |
 | `sonidos/`           | Efectos de sonido y las versiones de la música de fondo                   |
 
-El código está repartido por tema en archivos chicos (ninguno pasa de 500 líneas), para que cada
+El código está repartido por tema en archivos chicos (entre 250 y 510 líneas, salvo `vision.py`, que la letra pide que esté aparte), para que cada
 uno se pueda leer y explicar por separado.
 
 ## Cómo funciona la detección
@@ -311,7 +309,7 @@ están incluidos). Es todo original: no usa grabaciones ni canciones de nadie.
   | 3 | 124 | 5 | coro en la segunda mitad, palillos, ritmos más cortados |
   | 4 | 138 | 8 | coro siempre, carreritas de koto, shime en semicorcheas, redobles |
 
-  Se pasa de una a otra con un fundido (`musica.py`), sin cortar el juego.
+  Se pasa de una a otra con un fundido (clase `Musica` en `main.py`), sin cortar el juego.
 - **Cuenta regresiva:** el **3** y el **2** son palillos de madera (*hyoshigi*) con un taiko chico
   (el 2 un poco más agudo, para que suba la tensión); el **1** es el más épico: un o-daiko grande con
   un silbido que crece hasta el arranque. Al empezar: o-daiko, gong y un acorde de cuerdas.

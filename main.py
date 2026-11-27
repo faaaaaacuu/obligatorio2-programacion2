@@ -25,10 +25,11 @@ Controles (todo lo que aparece como tecla en pantalla también se puede clickear
   ESC              volver a la pantalla de inicio (en la partida, primero pregunta;
                    en la pantalla de inicio, sale). Cmd+Q / Ctrl+Q o la X cierran el juego.
 
-Este archivo tiene el bucle principal. Lo demás está repartido por tema:
-  partida.py (la partida y sus pantallas), jugador.py y objetos.py (lo que se mueve),
-  inicio.py y tarjetas.py (intro, pantalla de inicio, tutorial), graficos.py e
-  interfaz.py (dibujos y textos), vision.py (la cámara), musica.py, resultados.py.
+Este archivo tiene el bucle principal y la carga de recursos (sonidos, música y
+fuentes). Lo demás está repartido por tema: partida.py (la partida, sus pantallas
+y los resultados guardados), jugador.py y objetos.py (lo que se mueve), inicio.py
+y tarjetas.py (intro, pantalla de inicio, nombres, tutorial), graficos.py e
+interfaz.py (dibujos y textos) y vision.py (la cámara).
 """
 
 import math
@@ -40,18 +41,20 @@ os.environ.setdefault("SDL_RENDER_SCALE_QUALITY", "linear")
 
 import pygame
 
+import resultados
+from musica import Musica
+
 import graficos
 import inicio
 import interfaz
-import resultados
+import partida
 import tarjetas
 import vision
+from inicio import (caja_nombre, confirmar_nombre, dibujar_nombres, escribir_nombre)
 from interfaz import dibujar_atajos
-from musica import Musica
-from partida import (a_superficie, actualizar_partida, apretar, caja_nombre, confirmar_nombre,
-                     dibujar_boton_inicio, dibujar_carteles, dibujar_hud, dibujar_nombres,
-                     es_salir_del_sistema, escribir_nombre, esta_pausado, intensidad_de_musica,
-                     nueva_partida, terminar_partida)
+from partida import (a_superficie, actualizar_partida, apretar, dibujar_boton_inicio,
+                     dibujar_carteles, dibujar_hud, es_salir_del_sistema, esta_pausado,
+                     intensidad_de_musica, nueva_partida, terminar_partida)
 
 from ajustes import *
 
@@ -102,6 +105,47 @@ def cargar_sonidos():
               for i in range(CANTIDAD_CORTES)]
     sonidos["corte"] = SonidoVariado(cortes)
     return sonidos
+
+
+# ---------------------------------------------------------------------------
+# La música de fondo (la arma generar_sonidos.py): una tranquila para el menú
+# y cuatro versiones épicas para la partida, cada una más rápida y cargada.
+# Durante la partida suena una más intensa cuanto más difícil está el juego, y
+# se pasa de una a otra con un fundido.
+# ---------------------------------------------------------------------------
+
+class Musica:
+    """Las versiones de la música y los dos canales donde suenan. Mientras una
+    versión se apaga en un canal, la nueva entra en el otro (un "fundido")."""
+
+    def __init__(self, carpeta):
+        """Carga las versiones de la música de la carpeta del juego y reserva sus canales."""
+        # Todas las versiones se cargan una sola vez, antes del bucle.
+        # Si falta algún archivo, el juego sigue sin música.
+        self.pistas = []
+        for archivo in ARCHIVOS_MUSICA:
+            ruta = os.path.join(carpeta, archivo)
+            if not os.path.exists(ruta):
+                self.pistas = []
+                break
+            self.pistas.append(pygame.mixer.Sound(ruta))
+        # Se reservan los canales 0 y 1 para la música: así los efectos de sonido
+        # nunca los usan y no la cortan.
+        pygame.mixer.set_reserved(2)
+        self.canales = [pygame.mixer.Channel(0), pygame.mixer.Channel(1)]
+        self.cual = 0               # en qué canal está sonando ahora
+        self.sonando = None         # qué versión (intensidad) está sonando
+
+    def poner(self, intensidad):
+        """Hace sonar la versión de esa intensidad, si no es la que ya suena."""
+        if not self.pistas or intensidad == self.sonando:
+            return
+        self.canales[self.cual].fadeout(FUNDIDO_MUSICA_MS)       # la que suena se va apagando...
+        self.cual = 1 - self.cual
+        canal = self.canales[self.cual]
+        canal.set_volume(VOLUMEN_MUSICA)
+        canal.play(self.pistas[intensidad], loops=-1, fade_ms=FUNDIDO_MUSICA_MS)   # ...y entra la nueva
+        self.sonando = intensidad
 
 
 def cargar_fuente(archivo, tamanio):
@@ -174,7 +218,7 @@ def main():
     sonidos = cargar_sonidos()
     musica = Musica(CARPETA)         # las 4 versiones de la música de fondo
     fuentes = cargar_fuentes()
-    datos = resultados.cargar_resultados()
+    datos = partida.cargar_resultados()
     fondo = interfaz.crear_fondo(ANCHO, ALTO, COLOR_FONDO, OSCURIDAD_CENTRO, OSCURIDAD_BORDE)
     capa_cartel = crear_capa(CAPA_CARTEL)
     destello = crear_capa(COLOR_DESTELLO_BOMBA)

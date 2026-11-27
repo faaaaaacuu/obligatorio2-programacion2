@@ -1,5 +1,6 @@
 """La intro (dos espadazos de luz y el título), la pantalla de inicio (el título,
-los dos modos y si se ve la linterna) y el abanico para elegir el color de la luz.
+los dos modos y si se ve la linterna), la pantalla donde se escriben los nombres
+del versus y el abanico para elegir el color de la luz.
 
 Las tarjetas con las reglas y el tutorial están en tarjetas.py.
 """
@@ -11,14 +12,16 @@ import pygame
 
 import graficos
 import interfaz
-from ajustes import (ABERTURA_ABANICO, ALTO, ALTO_TECLA_CHICA, AMARILLO, ANCHO, APARECE_TITULO,
-                     APERTURA_PALETA, ARCHIVO_FUENTE_TEXTO, BLANCO, COLORES_ESPADA,
-                     COLOR_BOMBA_MORTAL, COLOR_DESTELLO_INTRO, COLOR_DESTELLO_TARJETA, CONTORNO,
+from ajustes import (ABERTURA_ABANICO, ALTO, ALTO_TECLA_CHICA, ALTO_TECLA_MEDIA, AMARILLO, ANCHO,
+                     APARECE_TITULO, APERTURA_PALETA, ARCHIVO_FUENTE_TEXTO, BLANCO, CAJA_NOMBRE,
+                     COLORES_ESPADA, COLOR_BOMBA_MORTAL, COLOR_DESTELLO_INTRO,
+                     COLOR_DESTELLO_TARJETA, COLOR_JUGADOR_1, COLOR_JUGADOR_2, CONTORNO,
                      DESENFOQUE_BRILLO, ESPADAZOS, FRUTAS_JUGADOR_1, FRUTAS_JUGADOR_2, GRIS, KANJI,
-                     KANJI_COLORES, LUZ_FAROL, MADERA, MADERA_CLARA, NEGRO, PANEL_MODO,
-                     RADIO_ABANICO, RADIO_CENTRO_ABANICO, RADIO_FRUTA_DEMO, ROJO, SALIENTE_ELEGIDO,
-                     SELLO_INTRO, TAMANIO_VIDA_TARJETA, TARJETA_ALTO, TARJETA_ANCHO,
-                     TARJETA_ANIMACION_ALTO, TITULO, VELO_PALETA, VERDE, Y_LINTERNA, Y_MODOS)
+                     KANJI_COLORES, LACA, LARGO_MAXIMO_NOMBRE, LUZ_FAROL, MADERA, MADERA_CLARA,
+                     NEGRO, PANEL_MODO, RADIO_ABANICO, RADIO_CENTRO_ABANICO, RADIO_FRUTA_DEMO,
+                     ROJO, SALIENTE_ELEGIDO, SELLO_INTRO, TAMANIO_VIDA_TARJETA, TARJETA_ALTO,
+                     TARJETA_ANCHO, TARJETA_ANIMACION_ALTO, TITULO, VELO_PALETA, VERDE, Y_LINTERNA,
+                     Y_MODOS)
 from graficos import mezclar
 from interfaz import (dibujar_atajos, dibujar_texto)
 from tarjetas import luz_en
@@ -242,6 +245,79 @@ def dibujar_intro(pantalla, capa_suave, capa_nitida, fuentes, imagenes, t):
     if 0 <= destello < 0.45:
         imagenes["blanco"].set_alpha(int(230 * (1 - destello / 0.45)))
         pantalla.blit(imagenes["blanco"], (0, 0))
+
+
+def confirmar_nombre(nombres, cual):
+    """Deja fijo el nombre `cual` (sin espacios de más). Si quedó vacío, le pone
+    "Jugador 1" o "Jugador 2"."""
+    nombres[cual] = nombres[cual].strip() or f"Jugador {cual + 1}"
+
+
+def escribir_nombre(nombres, cual, evento):
+    """Agrega o borra letras del nombre que se está escribiendo. Devuelve cuál
+    se escribe ahora: 0, 1, o 2 cuando ya están los dos (ENTER en el segundo).
+    El nombre del jugador 1 queda fijo al pasar al 2, pero se puede volver a
+    corregir: con la flecha izquierda, o borrando cuando el nombre 2 está vacío."""
+    if evento.type == pygame.TEXTINPUT:
+        if len(nombres[cual]) < LARGO_MAXIMO_NOMBRE:
+            nombres[cual] += evento.text
+    elif evento.key == pygame.K_BACKSPACE:
+        if cual == 1 and nombres[1] == "":
+            return 0                         # nada que borrar: se vuelve al nombre 1
+        nombres[cual] = nombres[cual][:-1]
+    elif evento.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+        confirmar_nombre(nombres, cual)
+        return cual + 1
+    elif evento.key == pygame.K_LEFT and cual == 1:
+        return 0                             # volver a corregir el nombre 1
+    elif evento.key == pygame.K_RIGHT and cual == 0:
+        confirmar_nombre(nombres, 0)         # igual que ENTER, pero sin empezar
+        return 1
+    return cual
+
+
+def caja_nombre(i):
+    """Devuelve el rectángulo de la caja donde se escribe el nombre del jugador `i`."""
+    caja = pygame.Rect((0, 0), CAJA_NOMBRE)
+    caja.center = (ANCHO // 2 + (-220 if i == 0 else 220), 285)
+    return caja
+
+
+def dibujar_listo(pantalla, caja, color):
+    """Dibuja un "tilde" de listo en la esquina de la caja de un nombre que ya está fijo."""
+    x, y = caja.right - 26, caja.centery
+    pygame.draw.lines(pantalla, color, False, [(x - 8, y), (x - 2, y + 7), (x + 10, y - 8)], 4)
+
+
+def dibujar_nombres(pantalla, fuentes, nombres, cual, tiempo):
+    """La pantalla donde cada jugador escribe su nombre antes del versus."""
+    centro = ANCHO // 2
+    dibujar_texto(pantalla, "VERSUS", fuentes["titulo"], AMARILLO, (centro, 80))
+    dibujar_texto(pantalla, "Escriban sus nombres", fuentes["media"], BLANCO, (centro, 150))
+    lados = (("Jugador 1 (izquierda)", COLOR_JUGADOR_1, centro - 220),
+             ("Jugador 2 (derecha)", COLOR_JUGADOR_2, centro + 220))
+    for i, (titulo, color, x) in enumerate(lados):
+        activo = i == cual
+        fijo = i < cual                      # el nombre 1, ya confirmado
+        dibujar_texto(pantalla, titulo, fuentes["media"], color, (x, 225))
+        caja = caja_nombre(i)
+        pygame.draw.rect(pantalla, LACA, caja, border_radius=4)
+        pygame.draw.rect(pantalla, color if activo or fijo else GRIS, caja, 3 if activo else 1,
+                         border_radius=4)
+        texto = nombres[i]
+        if activo and int(tiempo * 2) % 2 == 0:
+            texto += "|"                     # cursor que titila
+        if fijo:
+            # queda fijo, en su color y con un tilde, pero se puede volver a corregir
+            dibujar_texto(pantalla, texto, fuentes["grande"], color, caja.center)
+            dibujar_listo(pantalla, caja, color)
+            dibujar_atajos(pantalla, [(("←",), "corregir")], fuentes["chica"], fuentes["texto"],
+                           ALTO_TECLA_CHICA, GRIS, GRIS, (x, caja.bottom + 24))
+        else:
+            dibujar_texto(pantalla, texto, fuentes["grande"], BLANCO if activo else GRIS, caja.center)
+    atajos = [(("ENTER",), "listo"), (("BORRAR",), "corregir"), (("ESC",), "volver al inicio")]
+    dibujar_atajos(pantalla, atajos, fuentes["media"], fuentes["chica"], ALTO_TECLA_MEDIA, BLANCO,
+                   AMARILLO, (centro, 400))
 
 
 # ---------------------------------------------------------------------------

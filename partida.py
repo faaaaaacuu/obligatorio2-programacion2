@@ -1,22 +1,28 @@
-"""La partida: cómo empieza, cómo avanza cada cuadro, cómo termina, y lo que se
-dibuja encima (puntos, vidas, nombres, carteles de pausa y de fin).
+"""La partida: cómo empieza, cómo avanza cada cuadro, cómo termina, lo que se
+dibuja encima (puntos, vidas, carteles de pausa y de fin) y los resultados que
+quedan guardados (el récord y el historial del versus, en resultados.json).
 """
 
 import math
 import pygame
 
+import resultados
+
+from datetime import datetime
+import json
+import os
+
 import graficos
 import inicio
 import interfaz
-import resultados
-from ajustes import (ACHIQUE_ESPERA, ALTO, ALTO_TECLA_CHICA, ALTO_TECLA_MEDIA, AMARILLO, ANCHO,
-                     AUMENTO_BOMBAS, AUMENTO_GRAVEDAD, BLANCO, BOTON_INICIO, CAJA_NOMBRE,
-                     COLOR_BOMBA_MORTAL, COLOR_JUGADOR_1, COLOR_JUGADOR_2, DURACION_CARTEL,
-                     DURACION_DESTELLO, DURACION_MENSAJE, ESCALA_FRUTAS_VERSUS, FRUTAS_JUGADOR_1,
-                     FRUTAS_JUGADOR_2, FRUTAS_POR_NIVEL, GRIS, LACA, LARGO_MAXIMO_NOMBRE, MITAD,
-                     NIVELES, NIVEL_INICIAL_VERSUS, NIVEL_MINIMO_MUSICA, PARTIDAS_EN_PANTALLA,
-                     RADIO_MINIMO, ROJO, SEGUNDOS_POR_NIVEL, TOPE_BOMBAS, TOPE_ESPERA,
-                     TOPE_GRAVEDAD, TOPE_MAX_FRUTAS, VIDAS)
+from ajustes import (ACHIQUE_ESPERA, ALTO, ALTO_TECLA_MEDIA, AMARILLO, ANCHO, ARCHIVO_RESULTADOS,
+                     AUMENTO_BOMBAS, AUMENTO_GRAVEDAD, BLANCO, BOTON_INICIO, COLOR_BOMBA_MORTAL,
+                     COLOR_JUGADOR_1, COLOR_JUGADOR_2, DURACION_CARTEL, DURACION_DESTELLO,
+                     DURACION_MENSAJE, ESCALA_FRUTAS_VERSUS, FRUTAS_JUGADOR_1, FRUTAS_JUGADOR_2,
+                     FRUTAS_POR_NIVEL, GRIS, LACA, MITAD, NIVELES, NIVEL_INICIAL_VERSUS,
+                     NIVEL_MINIMO_MUSICA, PARTIDAS_EN_PANTALLA, RADIO_MINIMO, ROJO,
+                     SEGUNDOS_POR_NIVEL, TOPE_BOMBAS, TOPE_ESPERA, TOPE_GRAVEDAD, TOPE_MAX_FRUTAS,
+                     VIDAS)
 from interfaz import (dibujar_atajos, dibujar_tecla_chica, dibujar_texto)
 from jugador import Jugador
 
@@ -185,52 +191,10 @@ def actualizar_partida(juego, luces, dt, sonidos):
 def terminar_partida(juego, datos):
     """Guarda el resultado de la partida que acaba de terminar."""
     if juego["modo"] == 1:
-        juego["nuevo_record"] = resultados.registrar_puntaje(datos, juego["jugadores"][0].puntos)
+        juego["nuevo_record"] = partida.registrar_puntaje(datos, juego["jugadores"][0].puntos)
     else:
         uno, dos = juego["jugadores"]
-        resultados.registrar_versus(datos, uno, dos, juego["ganador"], juego["tiempo"])
-
-
-def confirmar_nombre(nombres, cual):
-    """Deja fijo el nombre `cual` (sin espacios de más). Si quedó vacío, le pone
-    "Jugador 1" o "Jugador 2"."""
-    nombres[cual] = nombres[cual].strip() or f"Jugador {cual + 1}"
-
-
-def escribir_nombre(nombres, cual, evento):
-    """Agrega o borra letras del nombre que se está escribiendo. Devuelve cuál
-    se escribe ahora: 0, 1, o 2 cuando ya están los dos (ENTER en el segundo).
-    El nombre del jugador 1 queda fijo al pasar al 2, pero se puede volver a
-    corregir: con la flecha izquierda, o borrando cuando el nombre 2 está vacío."""
-    if evento.type == pygame.TEXTINPUT:
-        if len(nombres[cual]) < LARGO_MAXIMO_NOMBRE:
-            nombres[cual] += evento.text
-    elif evento.key == pygame.K_BACKSPACE:
-        if cual == 1 and nombres[1] == "":
-            return 0                         # nada que borrar: se vuelve al nombre 1
-        nombres[cual] = nombres[cual][:-1]
-    elif evento.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
-        confirmar_nombre(nombres, cual)
-        return cual + 1
-    elif evento.key == pygame.K_LEFT and cual == 1:
-        return 0                             # volver a corregir el nombre 1
-    elif evento.key == pygame.K_RIGHT and cual == 0:
-        confirmar_nombre(nombres, 0)         # igual que ENTER, pero sin empezar
-        return 1
-    return cual
-
-
-def caja_nombre(i):
-    """Devuelve el rectángulo de la caja donde se escribe el nombre del jugador `i`."""
-    caja = pygame.Rect((0, 0), CAJA_NOMBRE)
-    caja.center = (ANCHO // 2 + (-220 if i == 0 else 220), 285)
-    return caja
-
-
-def dibujar_listo(pantalla, caja, color):
-    """Dibuja un "tilde" de listo en la esquina de la caja de un nombre que ya está fijo."""
-    x, y = caja.right - 26, caja.centery
-    pygame.draw.lines(pantalla, color, False, [(x - 8, y), (x - 2, y + 7), (x + 10, y - 8)], 4)
+        partida.registrar_versus(datos, uno, dos, juego["ganador"], juego["tiempo"])
 
 
 def frutas(cantidad):
@@ -320,37 +284,6 @@ def dibujar_boton_inicio(pantalla, fuentes):
     dibujar_texto(pantalla, "INICIO", fuentes["media"], BLANCO if encima else AMARILLO,
                   (boton.left + 32, boton.centery - fuentes["media"].get_height() // 2), False)
     dibujar_tecla_chica(pantalla, fuentes["texto"], "ESC", boton.right - 44, boton.centery - 11, 20, GRIS)
-
-
-def dibujar_nombres(pantalla, fuentes, nombres, cual, tiempo):
-    """La pantalla donde cada jugador escribe su nombre antes del versus."""
-    centro = ANCHO // 2
-    dibujar_texto(pantalla, "VERSUS", fuentes["titulo"], AMARILLO, (centro, 80))
-    dibujar_texto(pantalla, "Escriban sus nombres", fuentes["media"], BLANCO, (centro, 150))
-    lados = (("Jugador 1 (izquierda)", COLOR_JUGADOR_1, centro - 220),
-             ("Jugador 2 (derecha)", COLOR_JUGADOR_2, centro + 220))
-    for i, (titulo, color, x) in enumerate(lados):
-        activo = i == cual
-        fijo = i < cual                      # el nombre 1, ya confirmado
-        dibujar_texto(pantalla, titulo, fuentes["media"], color, (x, 225))
-        caja = caja_nombre(i)
-        pygame.draw.rect(pantalla, LACA, caja, border_radius=4)
-        pygame.draw.rect(pantalla, color if activo or fijo else GRIS, caja, 3 if activo else 1,
-                         border_radius=4)
-        texto = nombres[i]
-        if activo and int(tiempo * 2) % 2 == 0:
-            texto += "|"                     # cursor que titila
-        if fijo:
-            # queda fijo, en su color y con un tilde, pero se puede volver a corregir
-            dibujar_texto(pantalla, texto, fuentes["grande"], color, caja.center)
-            dibujar_listo(pantalla, caja, color)
-            dibujar_atajos(pantalla, [(("←",), "corregir")], fuentes["chica"], fuentes["texto"],
-                           ALTO_TECLA_CHICA, GRIS, GRIS, (x, caja.bottom + 24))
-        else:
-            dibujar_texto(pantalla, texto, fuentes["grande"], BLANCO if activo else GRIS, caja.center)
-    atajos = [(("ENTER",), "listo"), (("BORRAR",), "corregir"), (("ESC",), "volver al inicio")]
-    dibujar_atajos(pantalla, atajos, fuentes["media"], fuentes["chica"], ALTO_TECLA_MEDIA, BLANCO,
-                   AMARILLO, (centro, 400))
 
 
 def dibujar_carteles(pantalla, estado, juego, fuentes, hay_luz, umbral, tiempo, datos, color,
@@ -450,7 +383,7 @@ def dibujar_carteles(pantalla, estado, juego, fuentes, hay_luz, umbral, tiempo, 
                       COLOR_JUGADOR_2, (centro + 210, 125))
         dibujar_texto(pantalla, f"Duración: {formato_tiempo(juego['tiempo'])}", fuentes["chica"],
                       GRIS, (centro, 155))
-        ganadas1, ganadas2, empates = resultados.historial_entre(datos["versus"], uno.nombre, dos.nombre)
+        ganadas1, ganadas2, empates = partida.historial_entre(datos["versus"], uno.nombre, dos.nombre)
         historial = f"Historial: {uno.nombre} {ganadas1} - {ganadas2} {dos.nombre}"
         if empates:
             historial += f"   ({empates} empate{'s' if empates > 1 else ''})"
@@ -467,3 +400,84 @@ def dibujar_carteles(pantalla, estado, juego, fuentes, hay_luz, umbral, tiempo, 
                   (("ESC",), "inicio")]
         dibujar_atajos(pantalla, atajos, fuentes["media"], fuentes["chica"], ALTO_TECLA_MEDIA, BLANCO,
                        AMARILLO, (centro, ALTO - 35))
+
+
+# ---------------------------------------------------------------------------
+# Guarda y lee los resultados en un archivo JSON (resultados.json), así el
+# récord y el historial del versus quedan guardados aunque se cierre el juego.
+#
+# El archivo tiene esta forma:
+#     {
+#       "record": 42,
+#       "versus": [
+#         {"fecha": "14/11 15:30", "jugador1": "Ana", "frutas1": 23,
+#          "jugador2": "Facu", "frutas2": 18, "ganador": "Ana", "segundos": 95},
+#         ...
+#       ]
+#     }
+# ---------------------------------------------------------------------------
+
+RUTA = os.path.join(os.path.dirname(os.path.abspath(__file__)), ARCHIVO_RESULTADOS)
+
+
+def cargar_resultados():
+    """Lee el archivo y devuelve un diccionario con el récord y las partidas del
+    versus. Si el archivo todavía no existe (o está roto), empieza de cero."""
+    datos = {"record": 0, "versus": []}
+    try:
+        with open(RUTA, encoding="utf-8") as archivo:
+            leidos = json.load(archivo)
+        datos["record"] = int(leidos.get("record", 0))
+        datos["versus"] = list(leidos.get("versus", []))
+    except (OSError, ValueError, AttributeError):
+        pass
+    return datos
+
+
+def guardar_resultados(datos):
+    """Escribe los resultados en el archivo."""
+    try:
+        with open(RUTA, "w", encoding="utf-8") as archivo:
+            json.dump(datos, archivo, ensure_ascii=False, indent=2)
+    except OSError:
+        print("No se pudieron guardar los resultados en", RUTA)
+
+
+def registrar_puntaje(datos, puntos):
+    """Si el puntaje supera el récord, lo guarda. Devuelve True si es un récord nuevo."""
+    if puntos <= datos["record"]:
+        return False
+    datos["record"] = puntos
+    guardar_resultados(datos)
+    return True
+
+
+def registrar_versus(datos, uno, dos, ganador, segundos):
+    """Agrega una partida del versus al historial y la guarda.
+    `uno` y `dos` son los jugadores; `ganador` es el nombre del que ganó o "" si empataron."""
+    datos["versus"].append({
+        "fecha": datetime.now().strftime("%d/%m %H:%M"),
+        "jugador1": uno.nombre, "frutas1": uno.cortadas,
+        "jugador2": dos.nombre, "frutas2": dos.cortadas,
+        "ganador": ganador,
+        "segundos": int(segundos),
+    })
+    guardar_resultados(datos)
+
+
+def historial_entre(partidas, nombre1, nombre2):
+    """Cuenta las partidas que jugaron estas dos personas entre sí (sin importar
+    quién estaba de cada lado). Devuelve (ganadas por nombre1, ganadas por nombre2, empates)."""
+    ganadas1 = ganadas2 = empates = 0
+    pareja = {nombre1.lower(), nombre2.lower()}
+    for partida in partidas:
+        if {partida["jugador1"].lower(), partida["jugador2"].lower()} != pareja:
+            continue
+        ganador = partida["ganador"].lower()
+        if ganador == nombre1.lower():
+            ganadas1 += 1
+        elif ganador == nombre2.lower():
+            ganadas2 += 1
+        else:
+            empates += 1
+    return ganadas1, ganadas2, empates
