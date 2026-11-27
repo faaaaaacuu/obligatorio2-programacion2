@@ -252,4 +252,27 @@ están incluidos). Es todo original: no usa grabaciones ni canciones de nadie.
   (el 2 un poco más agudo, para que suba la tensión); el **1** es el más épico: un o-daiko grande con
   un silbido que crece hasta el arranque. Al empezar: o-daiko, gong y un acorde de cuerdas.
 - **Cortes de katana:** un silbido de aire (ruido filtrado que sube y baja) más el brillo metálico de
-  la hoja, con reverb para que quede sonando hasta apagarse.
+  la hoja, con reverb para que quede sonando hasta apagarse. Hay **5 versiones** (`corte_0.wav` …
+  `corte_4.wav`): más cortas o largas, más agudas o graves, con más aire o más metal. Cada corte
+  suena una al azar, pero nunca la misma dos veces seguidas (clase `SonidoVariado` en `main.py`),
+  así no se vuelve repetitivo.
+- **Ganar (versus):** los dos espadazos de la intro, el koto que sube rapidísimo por la escala
+  *yo* (la japonesa alegre: Re, Mi, Sol, La, Si) y al llegar arriba un o-daiko, un gong y un
+  acorde de koto con la shakuhachi encima.
+- **Perder:** el samurái **guarda la katana** (el raspado de la hoja entrando en la vaina y el
+  "¡chin!" de la guarda al cerrar) y después la shakuhachi baja triste por la *miyako-bushi* con el
+  koto, sobre un taiko y un gong suaves.
+- **Bomba:** la katana pega contra el hierro ("¡clang!" de metal grave), revienta la pólvora y
+  retumba un taiko.
+- **Fruta que se cae:** un golpe seco contra el tatami y el koto que baja medio tono, como un "uy".
+- **Nuevo récord** (y cuando aparece el título en la intro): la campana **rin** de los templos (un
+  cuenco de metal cuyas frecuencias "laten") con el koto subiendo Re, La, Re.
+- **+1 vida:** el koto sube rapidito y lo cierra un **furin** (la campanita de vidrio de las
+  ventanas japonesas).
+- **Sello de la intro:** el golpe de madera del *hanko* (sello japonés) sobre el papel, con un taiko.
+- **Lanzar la bomba mortal:** un shime-daiko que redobla cada vez más rápido mientras sube el
+  silbido, y un palillazo al soltarla.
+- **Bomba mortal:** un **kiai** (el grito de las artes marciales, "¡iyaaah!") con un espadazo, y al
+  caer el golpe un o-daiko enorme, la explosión y un gong que queda retumbando. El grito es una voz
+  sintetizada: armónicos de una nota grave filtrados por las formantes de las vocales, pasando de
+  la "i" a la "a", con la nota que sube de golpe y cae, más ronquera y aire.

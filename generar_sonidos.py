@@ -1,8 +1,9 @@
 """Genera los efectos de sonido (.wav) de la carpeta sonidos/.
 
 No hace falta correrlo para jugar: los .wav ya están incluidos.
-Cada sonido se arma con ondas seno (notas) y algo de ruido, con un
-desvanecido al final. Los cortes suenan a katana: un silbido de aire
+Cada sonido se arma con ondas seno y ruido filtrado, imitando
+instrumentos japoneses (koto, shakuhachi, taiko, campana rin, gong), con
+reverb y un desvanecido al final. Los cortes suenan a katana: un silbido de aire
 ("shhh") más el brillo metálico de la hoja ("eeesh").
 """
 
@@ -31,11 +32,6 @@ def barrido(frecuencia_inicio, frecuencia_fin, duracion, volumen=0.5, ruido=0.0)
         valor = math.sin(fase) + random.uniform(-1, 1) * ruido
         muestras.append(valor * volumen * (1 - avance))
     return muestras
-
-
-def nota(frecuencia, duracion, volumen=0.5):
-    """Devuelve las muestras de una nota que se va apagando."""
-    return barrido(frecuencia, frecuencia, duracion, volumen)
 
 
 def silbido(duracion, frecuencia_inicio, frecuencia_pico, frecuencia_fin, pico=0.4, semilla=1,
@@ -70,13 +66,14 @@ def silbido(duracion, frecuencia_inicio, frecuencia_pico, frecuencia_fin, pico=0
     return muestras
 
 
-def brillo_metalico(duracion, intensidad=1.0):
+def brillo_metalico(duracion, intensidad=1.0, tono=1.0):
     """El "eeesh" de la hoja de metal: varias frecuencias agudas que no son
     múltiplos entre sí (por eso suena a metal y no a nota musical), cada una
-    apagándose a su ritmo. Dos de ellas están muy cerca y "laten" (vibran)."""
+    apagándose a su ritmo. Dos de ellas están muy cerca y "laten" (vibran).
+    `tono` sube o baja todas las frecuencias juntas (otra hoja, otro brillo)."""
     parciales = [  # (frecuencia, volumen, cuánto tarda en apagarse)
-        (2350, 1.0, 0.30), (2366, 0.8, 0.30), (3540, 0.6, 0.20),
-        (4980, 0.45, 0.14), (6620, 0.3, 0.10),
+        (2350 * tono, 1.0, 0.30), (2366 * tono, 0.8, 0.30), (3540 * tono, 0.6, 0.20),
+        (4980 * tono, 0.45, 0.14), (6620 * tono, 0.3, 0.10),
     ]
     total = int(MUESTRAS_POR_SEGUNDO * duracion)
     muestras = []
@@ -164,11 +161,11 @@ def desvanecer_final(muestras, segundos=0.25):
 
 
 def katana(duracion_silbido, brillo, maximo, frecuencias=(900, 5200, 2500), pico=0.4, semilla=1,
-           segundos_cola=1.5):
+           segundos_cola=1.5, tono_hoja=1.0):
     """Un corte de katana: el silbido del aire y, un poquito después, el brillo de
     la hoja, todo con la reverb de la sala para que quede sonando hasta apagarse."""
     aire = normalizar(silbido(duracion_silbido, *frecuencias, pico=pico, semilla=semilla), 1.0)
-    hoja = normalizar(brillo_metalico(1.4), brillo)            # dura hasta apagarse solo
+    hoja = normalizar(brillo_metalico(1.4, tono=tono_hoja), brillo)   # dura hasta apagarse solo
     tajo = juntar(aire, hoja, duracion_silbido * pico * 0.8)
     return normalizar(desvanecer_final(sacar_silencio_final(reverb(tajo, segundos_cola))), maximo)
 
@@ -596,6 +593,220 @@ def comienzo():
     return normalizar(desvanecer_final(sacar_silencio_final(reverb(golpe, 2.0, 0.3))), 0.9)
 
 
+def espadazo():
+    """El espadazo de la intro: un corte de katana largo y con mucha hoja."""
+    return katana(0.42, 0.55, 0.85, (600, 6500, 1800), 0.45, 2, 2.2)
+
+
+def victoria():
+    """El sonido de ganar el versus: los dos espadazos de la intro (la firma del
+    juego), el koto sube rapidísimo por la escala "yo" (la japonesa alegre: Re,
+    Mi, Sol, La, Si), cae un o-daiko con el gong y queda sonando un acorde de
+    koto con la shakuhachi encima, hasta apagarse."""
+    azar = random.Random(21)
+    re4, mi4, sol4, la4, si4 = 293.66, 329.63, 392.00, 440.00, 493.88
+    pista = [0.0] * int(MUESTRAS_POR_SEGUNDO * 4.0)
+    # ¡shheeesh! ¡shheeesh!
+    sumar_en(pista, espadazo(), 0.0, 0.7)
+    sumar_en(pista, espadazo(), 0.28, 0.7)
+    # subida del koto: dos octavas de la escala yo, cada vez más rápida
+    subida = [re4, mi4, sol4, la4, si4, re4 * 2, mi4 * 2, sol4 * 2, la4 * 2]
+    segundo = 0.62
+    for k, frecuencia in enumerate(subida):
+        sumar_en(pista, koto(frecuencia, 0.8, azar), segundo, 0.45 + 0.04 * k)
+        segundo += 0.075 - 0.004 * k
+    # llegada: o-daiko grande + gong + acorde de koto rasgueado (Re, La, Re, Mi agudo)
+    llegada = segundo + 0.03
+    sumar_en(pista, taiko(1.0, azar, tono=0.7, caida=0.7, duracion=1.6), llegada, 1.0)
+    sumar_en(pista, gong(3.0), llegada, 0.35)
+    for k, frecuencia in enumerate((re4 / 2, la4 / 2, re4, la4, re4 * 2)):
+        sumar_en(pista, koto(frecuencia, 2.2, azar), llegada + 0.025 * k, 0.4)
+    # la flauta: entra en La y sube al Re agudo, que queda sonando
+    sumar_en(pista, shakuhachi(la4 * 2, 0.35, azar), llegada + 0.05, 0.35)
+    sumar_en(pista, shakuhachi(re4 * 2, 1.6, azar), llegada + 0.35, 0.4)
+    return normalizar(desvanecer_final(sacar_silencio_final(reverb(pista, 1.8, 0.3))), 0.85)
+
+
+def grito(duracion=0.75):
+    """Un kiai, el grito de las artes marciales: "¡iyaaah!". Es una voz sintetizada:
+    una nota grave con muchos armónicos (como las cuerdas vocales), de la que solo
+    suenan fuerte los que caen en las "formantes" de la vocal. Arranca en "i" y
+    pasa enseguida a "a"; la nota sube de golpe y después cae, con algo de
+    aspereza (ronquera) y aire, como un grito de verdad."""
+    azar = np.random.default_rng(7)
+    t = np.arange(int(MUESTRAS_POR_SEGUNDO * duracion)) / MUESTRAS_POR_SEGUNDO
+    avance = t / duracion
+    # la nota: sube de 170 a 250 Hz al principio y cae hasta 140 al final
+    tono = np.where(t < 0.09, 170 + 80 * t / 0.09, 250 - 110 * (np.maximum(0, t - 0.09) / (duracion - 0.09)) ** 1.5)
+    tono = tono * (1 + 0.02 * azar.standard_normal(len(t)).cumsum() / 300)   # temblor de la voz
+    fase = 2 * np.pi * np.cumsum(tono) / MUESTRAS_POR_SEGUNDO
+    # formantes: de la "i" (300, 2250, 2900) a la "a" (780, 1200, 2700) en 0,1 segundos
+    paso = np.minimum(1, t / 0.1)
+    formantes = [(300 + 480 * paso, 1.0, 90), (2250 - 1050 * paso, 0.5 + 0.2 * paso, 140),
+                 (2900 - 200 * paso, 0.2, 200)]
+    sonido = np.zeros_like(t)
+    for k in range(1, 30):
+        armonico = k * tono
+        ganancia = sum(a * np.exp(-((armonico - centro) / ancho) ** 2) for centro, a, ancho in formantes)
+        sonido += (ganancia + 0.02 / k) * np.sin(k * fase)
+    aspereza = 1 + 0.35 * np.sin(2 * np.pi * 38 * t) * azar.uniform(0.5, 1, len(t))
+    sonido = sonido / (np.abs(sonido).max() + 1e-9) * aspereza
+    aire = azar.uniform(-1, 1, len(t)) * 0.12 * (1 + 2 * avance ** 3)      # sopla más al final ("aaah...h")
+    volumen = np.minimum(1, t / 0.03) * np.minimum(1, (duracion - t) / 0.25)
+    return list((sonido + aire) * volumen)
+
+
+def bomba_mortal():
+    """La bomba mortal: un kiai (grito de guerra) con un espadazo, y al caer el
+    golpe un o-daiko enorme, la explosión y un gong grave que queda retumbando."""
+    azar = random.Random(31)
+    golpe = normalizar(grito(), 0.9)
+    golpe = juntar(golpe, [m * 0.7 for m in espadazo()], 0.0)
+    caida = 0.2                                      # el tambor cae junto con el tajo
+    explosion = normalizar(barrido(220, 30, 1.2, 0.9, ruido=1.0), 0.45)
+    golpe = juntar(golpe, explosion, caida)
+    golpe = juntar(golpe, taiko(1.0, azar, tono=0.6, caida=1.0, duracion=2.0), caida)
+    golpe = juntar(golpe, [m * 0.5 for m in gong(3.0)], caida + 0.02)
+    return normalizar(desvanecer_final(sacar_silencio_final(reverb(golpe, 1.8, 0.3))), 0.9)
+
+
+def envainar():
+    """Guardar la katana en la vaina: la hoja se desliza raspando (un siseo
+    metálico agudo y parejo, más largo que un corte) y termina con el "¡chin!"
+    de la guarda que choca contra la boca de la vaina."""
+    raspado = normalizar(silbido(0.55, 3800, 5200, 4600, pico=0.75, semilla=51, ancho_banda=6.0), 0.5)
+    roce = normalizar(brillo_metalico(0.55, tono=1.6), 0.08)       # la hoja vibrando mientras entra
+    chin = normalizar(brillo_metalico(0.9, tono=1.35), 0.9)
+    golpecito = [m * 0.6 for m in palillos(0.7)]                    # la madera de la vaina
+    sonido = juntar(juntar(raspado, roce, 0), chin, 0.52)
+    return juntar(sonido, golpecito, 0.52)
+
+
+def derrota():
+    """El sonido de perder, como el final de un duelo: el samurái guarda la
+    katana (envainar), y la shakuhachi baja por la escala miyako-bushi (la
+    melancólica, la de la música del juego) con el koto, sobre un taiko y un
+    gong graves y suaves."""
+    azar = random.Random(41)
+    pista = [0.0] * int(MUESTRAS_POR_SEGUNDO * 4.2)
+    sumar_en(pista, envainar(), 0.0, 0.9)
+    inicio = 0.85
+    frase = [("A4", 0.0, 0.45), ("G4", 0.4, 0.45), ("Eb4", 0.8, 0.5), ("D4", 1.25, 1.6)]
+    for nombre, segundo, duracion in frase:
+        sumar_en(pista, shakuhachi(NOTAS[nombre], duracion, azar), inicio + segundo, 0.5)
+    for nombre, segundo in (("D4", 0.0), ("Bb3", 0.8), ("D3", 1.25), ("A3", 1.3)):
+        sumar_en(pista, koto(NOTAS[nombre], 1.6, azar), inicio + segundo, 0.35)
+    sumar_en(pista, taiko(0.6, azar, tono=0.75, caida=0.6, duracion=1.4), inicio + 1.25, 0.6)
+    sumar_en(pista, gong(2.2), inicio + 1.25, 0.3)
+    return normalizar(desvanecer_final(sacar_silencio_final(reverb(pista, 1.8, 0.35))), 0.75)
+
+
+def campana(frecuencia, duracion=2.5, azar=random):
+    """La campana "rin" de los templos japoneses (un cuenco de metal que se toca
+    con un palito): unas pocas frecuencias que no son múltiplos entre sí, cada
+    una doble y apenas desafinada, así "late" (el "uaua-uaua" del cuenco)."""
+    parciales = [(1.0, 1.0, 2.2), (2.76, 0.45, 1.2), (5.40, 0.2, 0.6), (8.93, 0.08, 0.3)]
+    t = np.arange(int(MUESTRAS_POR_SEGUNDO * duracion)) / MUESTRAS_POR_SEGUNDO
+    sonido = np.zeros_like(t)
+    for proporcion, volumen, apagado in parciales:
+        f = frecuencia * proporcion
+        for desvio in (0.0, 1.6):                       # dos casi iguales: el latido
+            sonido += volumen * np.sin(2 * np.pi * (f + desvio) * t + azar.uniform(0, 6.3)) * np.exp(-t / apagado)
+    golpe = np.exp(-t / 0.004) * np.sin(2 * np.pi * 3100 * t) * 0.3   # el palito contra el metal
+    sonido = (sonido + golpe) * np.minimum(1, t / 0.002)
+    return list(sonido / (np.abs(sonido).max() + 1e-9))
+
+
+def furin(azar):
+    """Un furin, la campanita de vidrio que cuelga en las ventanas: agudo y
+    cristalino, con un segundo toquecito porque el badajo rebota."""
+    sonido = campana(2350, 1.2, azar)
+    return juntar([m * 0.6 for m in sonido], [m * 0.3 for m in campana(2350 * 1.5, 0.8, azar)], 0.09)
+
+
+def bomba_comun():
+    """Cortar una bomba: la katana pega contra el hierro ("¡clang!", un metal
+    grave y desafinado), revienta la pólvora y retumba un taiko."""
+    azar = random.Random(61)
+    tajo = katana(0.14, 0.2, 1.0, (1100, 5600, 2600), 0.4, 62)
+    clang = normalizar(brillo_metalico(0.9, tono=0.55), 0.8)
+    estallido = normalizar(barrido(160, 40, 0.5, 0.8, ruido=1.0), 0.6)
+    tambor = taiko(1.0, azar, tono=0.85, caida=0.35, duracion=0.9)
+    golpe = juntar(juntar(juntar([m * 0.5 for m in tajo], clang, 0.04), estallido, 0.05), tambor, 0.05)
+    return normalizar(desvanecer_final(sacar_silencio_final(reverb(golpe, 1.2, 0.3))), 0.8)
+
+
+def fruta_caida():
+    """Se cayó una fruta: un golpe apagado contra el tatami (taiko chiquito y
+    seco) y el koto que baja medio tono, como un "uy"."""
+    azar = random.Random(71)
+    golpe = [m * 0.7 for m in taiko(1.0, azar, tono=1.6, caida=0.07, duracion=0.35)]
+    golpe = juntar(golpe, [m * 0.4 for m in koto(NOTAS["Eb4"], 0.4, azar)], 0.06)
+    golpe = juntar(golpe, [m * 0.45 for m in koto(NOTAS["D4"], 0.9, azar)], 0.2)
+    return normalizar(desvanecer_final(sacar_silencio_final(reverb(golpe, 0.9, 0.25))), 0.5)
+
+
+def record():
+    """Nuevo récord (y la aparición del título en la intro): un golpe de la
+    campana rin y el koto que sube Re, La, Re, como un "¡ahí está!"."""
+    azar = random.Random(81)
+    golpe = [m * 0.55 for m in campana(NOTAS["D5"], 2.5, azar)]
+    for k, nombre in enumerate(("D4", "A4", "D5")):
+        golpe = juntar(golpe, [m * 0.45 for m in koto(NOTAS[nombre], 1.0, azar)], 0.02 + 0.09 * k)
+    return normalizar(desvanecer_final(sacar_silencio_final(reverb(golpe, 1.5, 0.3))), 0.6)
+
+
+def vida_extra():
+    """+1 vida por el combo: el koto sube rapidito por la escala "yo" y lo cierra
+    el furin, la campanita de vidrio."""
+    azar = random.Random(91)
+    golpe = [0.0]
+    for k, frecuencia in enumerate((587.33, 659.25, 783.99, 880.00)):    # Re, Mi, Sol, La agudos
+        golpe = juntar(golpe, [m * 0.45 for m in koto(frecuencia, 0.6, azar)], 0.06 * k)
+    golpe = juntar(golpe, furin(azar), 0.24)
+    return normalizar(desvanecer_final(sacar_silencio_final(reverb(golpe, 1.3, 0.3))), 0.6)
+
+
+def golpe_de_sello():
+    """El sello (hanko) que se estampa en la intro: un golpe de madera seco y
+    grave, el "plaf" del papel y un taiko que lo acompaña."""
+    azar = random.Random(101)
+    madera = taiko(1.0, azar, tono=2.2, caida=0.05, duracion=0.3)
+    papel = [azar.uniform(-1, 1) * math.exp(-i / (MUESTRAS_POR_SEGUNDO * 0.012)) * 0.5
+             for i in range(int(MUESTRAS_POR_SEGUNDO * 0.1))]
+    tambor = [m * 0.7 for m in taiko(1.0, azar, tono=0.8, caida=0.4, duracion=1.0)]
+    golpe = juntar(juntar(madera, papel, 0), tambor, 0)
+    return normalizar(desvanecer_final(sacar_silencio_final(reverb(golpe, 1.2, 0.3))), 0.8)
+
+
+def lanzamiento():
+    """Se lanza la bomba mortal al rival: un shime-daiko (tambor chico) que redobla
+    cada vez más rápido mientras sube el silbido, y un palillazo al soltarla."""
+    azar = random.Random(111)
+    pista = [0.0] * int(MUESTRAS_POR_SEGUNDO * 1.0)
+    segundo, espera = 0.0, 0.11
+    while segundo < 0.6:
+        sumar_en(pista, taiko(0.5 + segundo, azar, tono=2.4, caida=0.05, duracion=0.15), segundo, 0.6)
+        segundo += espera
+        espera *= 0.85
+    sumar_en(pista, normalizar(silbido(0.6, 300, 4000, 3000, pico=0.85, semilla=3), 0.7), 0.0, 1.0)
+    sumar_en(pista, palillos(1.0), 0.62, 0.8)
+    return normalizar(desvanecer_final(sacar_silencio_final(reverb(pista, 1.0, 0.3))), 0.65)
+
+
+# Variantes del corte, para que no suene siempre igual: cada una con otro largo,
+# otro barrido del silbido (frecuencia de inicio, pico y final), otro momento del
+# pico, otro "azar" para el ruido y otra hoja (más grave o más aguda).
+# (duración, brillo, frecuencias, pico, semilla, tono de la hoja)
+VARIANTES_CORTE = [
+    (0.20, 0.35, (900, 5200, 2500), 0.40, 1, 1.00),    # el tajo de siempre
+    (0.16, 0.30, (1200, 6400, 3200), 0.30, 11, 1.18),  # más corto y agudo, como un latigazo
+    (0.26, 0.40, (700, 4300, 1900), 0.50, 12, 0.86),   # más largo y grave, una hoja pesada
+    (0.22, 0.25, (1000, 5800, 2200), 0.35, 13, 1.07),  # más aire que metal
+    (0.18, 0.45, (800, 4800, 3000), 0.45, 14, 0.94),   # más brillo de la hoja
+]
+
+
 def guardar(nombre, muestras):
     ruta = os.path.join(CARPETA, nombre + ".wav")
     with wave.open(ruta, "w") as archivo:
@@ -609,18 +820,18 @@ def guardar(nombre, muestras):
 
 if __name__ == "__main__":
     os.makedirs(CARPETA, exist_ok=True)
-    guardar("corte", katana(0.2, 0.35, 0.7))                                    # tajo corto
-    guardar("espadazo", katana(0.42, 0.55, 0.85, (600, 6500, 1800), 0.45, 2, 2.2))  # el de la intro
-    guardar("bomba", barrido(140, 40, 0.6, 0.8, ruido=0.9))
-    guardar("caida", barrido(420, 160, 0.3, 0.4))
-    guardar("nivel", nota(660, 0.12) + nota(880, 0.12) + nota(1100, 0.3))
-    guardar("ganar", nota(523, 0.15) + nota(659, 0.15) + nota(784, 0.15) + nota(1047, 0.5))
-    guardar("lanzar", normalizar(desvanecer_final(reverb(silbido(0.6, 300, 4000, 3000, pico=0.85, semilla=3),
-                                                         1.0)), 0.6))
-    guardar("mortal", barrido(300, 30, 1.2, 0.9, ruido=1.0))
-    guardar("vida", nota(784, 0.08) + nota(1047, 0.08) + nota(1319, 0.08) + nota(1568, 0.25))
-    guardar("sello", barrido(170, 60, 0.14, 0.8, ruido=0.5))
-    guardar("perder", nota(392, 0.25) + nota(330, 0.25) + nota(262, 0.6))
+    for numero, (duracion, brillo, frecuencias, pico, semilla, tono) in enumerate(VARIANTES_CORTE):
+        guardar(f"corte_{numero}", katana(duracion, brillo, 0.7, frecuencias, pico, semilla, tono_hoja=tono))
+    guardar("espadazo", espadazo())                                             # el de la intro
+    guardar("bomba", bomba_comun())
+    guardar("caida", fruta_caida())
+    guardar("nivel", record())
+    guardar("ganar", victoria())
+    guardar("lanzar", lanzamiento())
+    guardar("mortal", bomba_mortal())
+    guardar("vida", vida_extra())
+    guardar("sello", golpe_de_sello())
+    guardar("perder", derrota())
     guardar("musica_menu", componer_musica(0))              # la tranquila: menú, intro y finales
     for intensidad in range(len(TEMPOS_EPICOS)):             # las épicas: durante la partida
         guardar(f"musica_{intensidad}", componer_musica_epica(intensidad))

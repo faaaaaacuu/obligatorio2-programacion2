@@ -26,6 +26,7 @@ Controles:
 
 import math
 import os
+import random
 
 # Al agrandar el juego a pantalla completa, que lo suavice en vez de pixelarlo.
 os.environ.setdefault("SDL_RENDER_SCALE_QUALITY", "linear")
@@ -42,7 +43,7 @@ from graficos import dibujar_texto
 from objetos import Jugador
 
 CARPETA = os.path.dirname(os.path.abspath(__file__))
-NOMBRES_SONIDOS = ("corte", "bomba", "caida", "nivel", "ganar", "perder", "lanzar", "mortal", "vida", "sello",
+NOMBRES_SONIDOS = ("bomba", "caida", "nivel", "ganar", "perder", "lanzar", "mortal", "vida", "sello",
                    "espadazo", "cuenta_3", "cuenta_2", "cuenta_1", "comienzo")
 MITAD = ANCHO // 2
 # En el menú todavía no hay modo elegido: se busca una luz en cada mitad.
@@ -53,6 +54,27 @@ ZONAS_MENU = [(0, MITAD), (MITAD, ANCHO)]
 # Carga de recursos (se llama una sola vez, antes del bucle)
 # ---------------------------------------------------------------------------
 
+class SonidoVariado:
+    """Varias versiones de un mismo sonido. Cada vez que se toca suena una al azar,
+    pero nunca la misma dos veces seguidas: así los cortes no se vuelven repetitivos.
+    Se usa igual que un Sound: sonidos["corte"].play()."""
+
+    def __init__(self, versiones):
+        self.versiones = versiones
+        self.anterior = None        # índice de la última que sonó
+
+    def elegir(self):
+        """Devuelve el índice de una versión al azar distinta de la anterior."""
+        opciones = [i for i in range(len(self.versiones)) if i != self.anterior]
+        if not opciones:            # si hay una sola versión, se repite
+            opciones = [0]
+        return random.choice(opciones)
+
+    def play(self):
+        self.anterior = self.elegir()
+        self.versiones[self.anterior].play()
+
+
 def cargar_sonidos():
     """Carga los sonidos una sola vez. Devuelve un diccionario nombre -> Sound."""
     # Los cortes tienen reverb y quedan sonando un rato: con más canales se pueden
@@ -62,6 +84,9 @@ def cargar_sonidos():
     for nombre in NOMBRES_SONIDOS:
         ruta = os.path.join(CARPETA, "sonidos", nombre + ".wav")
         sonidos[nombre] = pygame.mixer.Sound(ruta)
+    cortes = [pygame.mixer.Sound(os.path.join(CARPETA, "sonidos", f"corte_{i}.wav"))
+              for i in range(CANTIDAD_CORTES)]
+    sonidos["corte"] = SonidoVariado(cortes)
     return sonidos
 
 

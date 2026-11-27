@@ -113,6 +113,7 @@ DESENFOQUE_BRILLO = 3      # cuánto se difumina el resplandor de la espada de l
 
 # --- Sonido ---
 CANALES_DE_AUDIO = 32      # cuántos sonidos pueden sonar a la vez
+CANTIDAD_CORTES = 5        # cuántos sonidos de corte distintos hay (sonidos/corte_0.wav ...)
 # Música de fondo (la compone generar_sonidos.py). La primera es la tranquila del
 # menú; las otras 4 son las épicas de la partida, cada una más rápida y cargada.
 ARCHIVOS_MUSICA = ["sonidos/musica_menu.wav"] + [f"sonidos/musica_{i}.wav" for i in range(4)]
