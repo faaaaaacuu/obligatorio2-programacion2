@@ -361,10 +361,36 @@ Usé **Claude** (Anthropic) como asistente durante el desarrollo:
 - **Documentación:** para redactar y ordenar este README, agregar docstrings y pasar las constantes
   a `ajustes.py`.
 
-Prompts más relevantes:
+### Tipos de prompts
 
-- "checkea la letra del obligatorio 2. fijate si cumple con todo el juego que es cortar fruta con la luz"
-- "podes hacer los commits y push desde aca? arregla el readme. agrega docstrings. cambia lo de ajustes.py, ponelo todo ahi."
+El juego lo fui armando con prompts cortos, de a un cambio por vez: yo decía qué quería o qué no me
+gustaba, Claude proponía y programaba, y yo probaba el juego y volvía con lo siguiente. Los prompts
+fueron de estos tipos (los ejemplos están copiados tal cual los escribí):
+
+- **Revisar contra la letra del obligatorio**, para ver qué faltaba.
+  "checkea la letra del obligatorio 2. fijate si cumple con todo el juego que es cortar fruta con la luz"
+- **Pedir partes nuevas del juego**, describiendo cómo las imaginaba.
+  "la primera vez que abris el juego las cards pasan de a una al estilo motion graphics explicando.
+  deben tener efectos de sonido y la posibilidad de saltear la intro"
+  "cuando queres cambiar el color, que aparezca como una paleta de colores pero asiatica para
+  elegirlas. como un mini menu desplegable"
+  "Tengo que agregar en las reglas antes [...] una animación que te muestre que tenés que estar en
+  un ambiente iluminado [...] pero que no haya algo más brillante que la linterna"
+- **Corregir lo que no funcionaba**, contando qué pasaba o pegando el error.
+  "si le diste enter a el jugador 1 no podes cambiarle el nombre. deberia poderse au que aparezca
+  ya fijo"
+  "ModuleNotFoundError: No module named 'resultados'"
+- **Ajustar el diseño cuando algo no me convencía.**
+  "es como mucha info toda junta", "esta todo medio 8bit. necesito mas limpio todo",
+  "muy generico claude"
+- **Que se use como cualquier programa.**
+  "el juego debe incluir las logicas diarias de la computadora. o sea que la gente pueda hacerlo
+  funcionar como haria funcionar cualquier otro software"
+- **Ordenar el código.**
+  "el codigo debe estar en archivos pequeños de entre 300 y 500 lineas",
+  "cambia lo de ajustes.py, ponelo todo ahi", "agrega docstrings"
+- **Documentación y entrega:** el README, el informe y el póster.
+  "podes hacer los commits y push desde aca? arregla el readme."
 
 Referencia (APA):
 
