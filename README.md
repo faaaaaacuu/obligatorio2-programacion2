@@ -137,9 +137,10 @@ centro a la esquina de arriba en 0,2 s), ese punto no cuenta. Si el reflejo se q
 rato se acepta, pero como un trazo nuevo, sin unir los dos lugares.
 
 **Filtro de color:** el punto de luz y su estela se tiñen de un color. En la pantalla de inicio, la
-tecla **C** despliega una **paleta**: un panel de laca con seis "piedras de tinta", cada una con su
-kanji: oro (金), bermellón (朱), jade (翠), sakura (桜), índigo (藍) y luna (月). Se elige con las
-flechas o con un clic, y ENTER la cierra. En medio de la partida (jugando solo), **C** pasa directo
+tecla **C** abre un **abanico japonés** (*sensu*): cada gajo de papel plegado es un color, con su
+kanji inclinado como su varilla: oro (金), bermellón (朱), jade (翠), sakura (桜), índigo (藍) y
+luna (月). El gajo elegido sobresale y tiene un hilo dorado; lo de atrás se oscurece. Se elige con las
+flechas o con un clic, y ENTER lo cierra. En medio de la partida (jugando solo), **C** pasa directo
 al color siguiente. En el versus cada jugador tiene el suyo: jade a la izquierda y bermellón
 anaranjado a la derecha.
 

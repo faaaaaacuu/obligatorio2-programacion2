@@ -25,8 +25,9 @@ from ajustes import (COLORES_EXPLOSION, COLOR_DESTELLO_TARJETA, COLOR_DESTELLO_I
 from ajustes import (TUTORIAL_ENTRADA, TUTORIAL_SALIDA, TUTORIAL_PAUSA, TUTORIAL_ESCALA, TUTORIAL_GIRO,
                      TUTORIAL_FLOTE, TAMANIO_NUMERO_TUTORIAL, BOTON_SALTEAR, LACA)
 from ajustes import COLOR_CUARTO, COLOR_PERSONA, COLOR_LAMPARA, COLOR_LAMPARA_APAGADA
-from ajustes import (ALTO_TECLA_CHICA, KANJI_COLORES, TAMANIO_PIEDRA, SEPARACION_PIEDRAS, ALTO_PALETA,
-                     APERTURA_PALETA)
+from ajustes import (ALTO_TECLA_CHICA, KANJI_COLORES, RADIO_ABANICO, RADIO_CENTRO_ABANICO,
+                     ABERTURA_ABANICO, SALIENTE_ELEGIDO, APERTURA_PALETA, VELO_PALETA,
+                     MADERA, MADERA_CLARA)
 
 LUZ = COLORES_ESPADA[0][1]      # color de la luz en las animaciones
 CARPETA = os.path.dirname(os.path.abspath(__file__))
@@ -66,7 +67,8 @@ def crear_imagenes(fuentes):
     imagenes["sello"] = graficos.crear_sello(KANJI, fuentes["kanji"], 64) if hay_kanji else None
     imagenes["sello_chico"] = graficos.crear_sello(KANJI, fuentes["kanji_chico"], 42) if hay_kanji else None
     imagenes["farol"] = graficos.crear_farol(70)
-    imagenes["panel_paleta"] = graficos.crear_panel(ancho_paleta(), ALTO_PALETA)
+    imagenes["velo"] = pygame.Surface((ANCHO, ALTO), pygame.SRCALPHA)   # oscurece lo de atrás de la paleta
+    imagenes["velo"].fill((0, 0, 0, VELO_PALETA))
     # lienzo donde se arma cada tarjeta del tutorial antes de agrandarla y girarla
     imagenes["lienzo_tarjeta"] = pygame.Surface((TARJETA_ANCHO, TARJETA_ALTO), pygame.SRCALPHA)
     imagenes["halo_farol"] = graficos.crear_halo(70, LUZ_FAROL, alfa_maximo=90)
@@ -697,65 +699,104 @@ def dibujar_tutorial(pantalla, fuentes, imagenes, indice, t, tiempo):
                    fuentes["texto"], ALTO_TECLA_CHICA, GRIS, AMARILLO, (18, ALTO - 36), False)
     dibujar_boton_saltear(pantalla, fuentes)
 
+
 # ---------------------------------------------------------------------------
-# Paleta de colores: con C, en la pantalla de inicio se despliega hacia arriba
-# un panel de laca con una "piedra de tinta" por color, cada una con su kanji.
+# Paleta de colores: con C, en la pantalla de inicio se abre un abanico japonés
+# (sensu). Cada gajo de papel es un color, con su kanji siguiendo la varilla.
 # ---------------------------------------------------------------------------
 
-def ancho_paleta():
-    """Devuelve el ancho del panel de la paleta (las piedras más un margen)."""
-    cantidad = len(COLORES_ESPADA)
-    return cantidad * TAMANIO_PIEDRA + (cantidad - 1) * SEPARACION_PIEDRAS + 48
+def clavo_abanico():
+    """Devuelve el punto donde se juntan las varillas (el clavo del abanico):
+    abajo al medio, justo arriba de la línea del color."""
+    return (ANCHO // 2, ALTO - 76)
+
+
+def punto_abanico(angulo, radio):
+    """Devuelve el punto a `radio` píxeles del clavo, en la dirección `angulo`
+    (en grados: 0 es para arriba, negativo a la izquierda, positivo a la derecha)."""
+    cx, cy = clavo_abanico()
+    a = math.radians(angulo)
+    return (cx + math.sin(a) * radio, cy - math.cos(a) * radio)
+
+
+def angulos_gajo(i, apertura):
+    """Devuelve (desde, hasta) en grados del gajo `i`. Con `apertura` 0 el abanico
+    está cerrado (todos los gajos juntos) y con 1 está abierto del todo."""
+    total = ABERTURA_ABANICO * apertura
+    ancho = total / len(COLORES_ESPADA)
+    desde = -total / 2 + i * ancho
+    return desde, desde + ancho
 
 
 def rect_paleta():
-    """Devuelve el rectángulo del panel desplegado: centrado, justo arriba de la línea del color."""
-    rect = pygame.Rect(0, 0, ancho_paleta(), ALTO_PALETA)
-    rect.midbottom = (ANCHO // 2, ALTO - 72)
-    return rect
-
-
-def rects_piedras():
-    """Devuelve el rectángulo de cada piedra de color dentro de la paleta."""
-    panel = rect_paleta()
-    return [pygame.Rect(panel.left + 24 + i * (TAMANIO_PIEDRA + SEPARACION_PIEDRAS), panel.top + 22,
-                        TAMANIO_PIEDRA, TAMANIO_PIEDRA) for i in range(len(COLORES_ESPADA))]
+    """Devuelve el rectángulo que ocupa el abanico abierto (para saber si un clic cayó adentro)."""
+    cx, cy = clavo_abanico()
+    radio = RADIO_ABANICO + SALIENTE_ELEGIDO
+    return pygame.Rect(cx - radio, cy - radio - 40, radio * 2, radio + 50)
 
 
 def piedra_en(posicion):
-    """Devuelve el número de la piedra que está en `posicion` (un clic), o None."""
-    for i, rect in enumerate(rects_piedras()):
-        if rect.collidepoint(posicion):
+    """Devuelve el número del gajo (color) que está en `posicion`, o None."""
+    cx, cy = clavo_abanico()
+    dx, dy = posicion[0] - cx, posicion[1] - cy
+    distancia = math.hypot(dx, dy)
+    if not RADIO_CENTRO_ABANICO <= distancia <= RADIO_ABANICO + SALIENTE_ELEGIDO:
+        return None
+    angulo = math.degrees(math.atan2(dx, -dy))
+    for i in range(len(COLORES_ESPADA)):
+        desde, hasta = angulos_gajo(i, 1)
+        if desde <= angulo < hasta:
             return i
     return None
 
 
+def borde_de_gajo(desde, hasta, radio, pasos=6):
+    """Devuelve los puntos del borde de afuera de un gajo (un arco)."""
+    return [punto_abanico(desde + (hasta - desde) * k / pasos, radio) for k in range(pasos + 1)]
+
+
+def dibujar_gajo(pantalla, desde, hasta, radio, color):
+    """Un gajo de papel plegado: dos pliegues, uno más claro y otro más oscuro,
+    que es lo que hace que un abanico se vea como un abanico."""
+    medio = (desde + hasta) / 2
+    for a, b, tono in ((desde, medio, mezclar(color, BLANCO, 0.15)), (medio, hasta, mezclar(color, NEGRO, 0.18))):
+        puntos = borde_de_gajo(a, b, radio, 3) + borde_de_gajo(b, a, RADIO_CENTRO_ABANICO + 8, 3)
+        pygame.draw.polygon(pantalla, tono, puntos)
+
+
 def dibujar_paleta(pantalla, fuentes, imagenes, elegido, t):
-    """Dibuja la paleta desplegada. `elegido` es el color marcado y `t` los segundos
-    desde que se abrió: el panel se despliega de abajo hacia arriba, como un pergamino."""
-    panel = rect_paleta()
+    """Dibuja el abanico abierto (o abriéndose). `elegido` es el color marcado y
+    `t` los segundos desde que se abrió."""
     apertura = min(1.0, t / APERTURA_PALETA)
-    apertura = 1 - (1 - apertura) ** 3          # frena al final
-    visible = pygame.Rect(panel.left, panel.bottom - int(panel.height * apertura), panel.width,
-                          int(panel.height * apertura))
-    pantalla.set_clip(visible)                  # solo se ve la parte ya desplegada
-    pantalla.blit(imagenes["panel_paleta"], panel)
-    for i, (rect, (nombre, color)) in enumerate(zip(rects_piedras(), COLORES_ESPADA)):
+    apertura = 1 - (1 - apertura) ** 3          # se abre rápido y frena al final
+    pantalla.blit(imagenes["velo"], (0, 0))      # lo de atrás queda oscuro y no distrae
+    clavo = clavo_abanico()
+    # primero los gajos que no están elegidos, y al final el elegido (queda arriba)
+    orden = [i for i in range(len(COLORES_ESPADA)) if i != elegido] + [elegido]
+    for i in orden:
+        nombre, color = COLORES_ESPADA[i]
+        desde, hasta = angulos_gajo(i, apertura)
+        radio = RADIO_ABANICO + (SALIENTE_ELEGIDO if i == elegido else 0)
+        dibujar_gajo(pantalla, desde, hasta, radio, color if i == elegido else mezclar(color, NEGRO, 0.25))
+        # las varillas de madera, desde el clavo hasta el borde del papel
+        for angulo in (desde, hasta):
+            pygame.draw.line(pantalla, MADERA, clavo, punto_abanico(angulo, radio), 2)
         if i == elegido:
-            rect = rect.move(0, -4)             # la elegida se levanta un poquito
-            pygame.draw.rect(pantalla, AMARILLO, rect.inflate(10, 10), 2, border_radius=12)
-        # la piedra: el color con un borde más claro adentro, como un sello
-        pygame.draw.rect(pantalla, CONTORNO, rect.move(0, 3), border_radius=10)
-        pygame.draw.rect(pantalla, color, rect, border_radius=10)
-        pygame.draw.rect(pantalla, mezclar(color, BLANCO, 0.35), rect.inflate(-8, -8), 1, border_radius=7)
-        kanji = fuentes["kanji_chico"].render(KANJI_COLORES[i], True, mezclar(color, CONTORNO, 0.75))
-        pantalla.blit(kanji, kanji.get_rect(center=(rect.centerx, rect.centery + 1)))
-        dibujar_texto(pantalla, nombre, fuentes["texto"], color if i == elegido else GRIS,
-                      (rect.centerx, rect.bottom + 16))
-    dibujar_atajos(pantalla, [(("←", "→"), "elegir"), (("ENTER",), "listo")], fuentes["texto"],
-                   fuentes["texto"], 20, GRIS, AMARILLO, (panel.centerx, panel.bottom - 20))
-    pantalla.set_clip(None)
-    # piquito abajo que apunta a la línea del color (como un menú desplegable)
+            # un hilo dorado en el borde del gajo elegido
+            pygame.draw.lines(pantalla, AMARILLO, False, borde_de_gajo(desde, hasta, radio), 2)
+        if apertura > 0.6:
+            # el kanji, inclinado como su varilla
+            medio = (desde + hasta) / 2
+            tinta = mezclar(color, CONTORNO, 0.75) if i == elegido else mezclar(color, CONTORNO, 0.55)
+            kanji = pygame.transform.rotozoom(fuentes["kanji_chico"].render(KANJI_COLORES[i], True, tinta),
+                                              -medio, 1)
+            pantalla.blit(kanji, kanji.get_rect(center=punto_abanico(medio, radio - 30)))
+    # las dos varillas de afuera, más gruesas, y el clavo
+    for angulo in angulos_gajo(0, apertura)[:1] + angulos_gajo(len(COLORES_ESPADA) - 1, apertura)[1:]:
+        pygame.draw.line(pantalla, MADERA_CLARA, clavo, punto_abanico(angulo, RADIO_ABANICO + 6), 5)
+    pygame.draw.circle(pantalla, MADERA, clavo, 9)
+    pygame.draw.circle(pantalla, AMARILLO, clavo, 4)
     if apertura >= 1:
-        x, y = panel.centerx, panel.bottom
-        pygame.draw.polygon(pantalla, AMARILLO, [(x - 8, y), (x + 8, y), (x, y + 8)])
+        dibujar_atajos(pantalla, [(("←", "→"), "elegir"), (("ENTER",), "listo")], fuentes["texto"],
+                       fuentes["texto"], 20, GRIS, AMARILLO,
+                       (clavo[0], clavo[1] - RADIO_ABANICO - SALIENTE_ELEGIDO - 22))

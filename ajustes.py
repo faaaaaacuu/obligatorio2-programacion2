@@ -67,13 +67,15 @@ COLORES_ESPADA = [
     ("Índigo", (110, 130, 240)),
     ("Luna", (225, 230, 245)),
 ]
-# Paleta para elegir el color (tecla C en la pantalla de inicio): cada color es una
-# "piedra de tinta" con su kanji, en el mismo orden que COLORES_ESPADA.
+# Paleta para elegir el color (tecla C en la pantalla de inicio): un abanico japonés
+# (sensu) que se abre; cada gajo es un color con su kanji, en el orden de COLORES_ESPADA.
 KANJI_COLORES = ["金", "朱", "翠", "桜", "藍", "月"]   # oro, bermellón, jade, sakura, índigo, luna
-TAMANIO_PIEDRA = 52        # lado de cada piedra de color (píxeles)
-SEPARACION_PIEDRAS = 14
-ALTO_PALETA = 150          # alto del panel que se despliega
-APERTURA_PALETA = 0.22     # segundos que tarda en desplegarse
+RADIO_ABANICO = 175        # largo de las varillas (píxeles)
+RADIO_CENTRO_ABANICO = 40  # cerca del clavo solo hay varillas de madera, sin papel
+ABERTURA_ABANICO = 150     # grados que ocupa el abanico abierto
+SALIENTE_ELEGIDO = 14      # cuánto sobresale el gajo del color elegido
+APERTURA_PALETA = 0.3      # segundos que tarda en abrirse
+VELO_PALETA = 170          # 0-255: qué tan oscuro queda lo de atrás mientras está abierto
 COLOR_JUGADOR_1 = (80, 215, 180)     # jade (versus, mitad izquierda)
 COLOR_JUGADOR_2 = (240, 120, 60)     # bermellón anaranjado (versus, mitad derecha)
 COLOR_FONDO = (12, 11, 24)           # índigo de noche que oscurece la cámara
