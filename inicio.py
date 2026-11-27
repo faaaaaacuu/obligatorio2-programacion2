@@ -24,6 +24,7 @@ from ajustes import (COLORES_EXPLOSION, COLOR_DESTELLO_TARJETA, COLOR_DESTELLO_I
                      TAMANIO_VIDA_TARJETA, PANEL_MODO, ESPADAZOS, APARECE_TITULO, SELLO_INTRO)
 from ajustes import (TUTORIAL_ENTRADA, TUTORIAL_SALIDA, TUTORIAL_PAUSA, TUTORIAL_ESCALA, TUTORIAL_GIRO,
                      TUTORIAL_FLOTE, TAMANIO_NUMERO_TUTORIAL, BOTON_SALTEAR, LACA)
+from ajustes import COLOR_CUARTO, COLOR_PERSONA, COLOR_LAMPARA, COLOR_LAMPARA_APAGADA
 from ajustes import (ALTO_TECLA_CHICA, KANJI_COLORES, TAMANIO_PIEDRA, SEPARACION_PIEDRAS, ALTO_PALETA,
                      APERTURA_PALETA)
 
@@ -179,6 +180,49 @@ def fruta_subiendo(t, apice):
 # ---------------------------------------------------------------------------
 # Las animaciones: cada una recibe la zona donde dibujar y el tiempo
 # ---------------------------------------------------------------------------
+
+def dibujar_cruz(sup, x, y, color):
+    """Una ✗ dibujada con dos líneas (para "esto está mal")."""
+    for a, b in (((-6, -6), (6, 6)), ((6, -6), (-6, 6))):
+        pygame.draw.line(sup, color, (x + a[0], y + a[1]), (x + b[0], y + b[1]), 3)
+
+
+def dibujar_tilde(sup, x, y, color):
+    """Un ✓ dibujado con dos líneas (para "esto está bien")."""
+    pygame.draw.lines(sup, color, False, [(x - 7, y), (x - 2, y + 6), (x + 8, y - 7)], 3)
+
+
+def animar_lugar(sup, t, imagenes, fuentes):
+    """Antes de jugar: el cuarto tiene que estar iluminado (para que se vea la persona),
+    pero sin nada más brillante que la linterna. Primero hay una lámpara prendida y la
+    cámara la toma como espada (✗); se apaga y la cámara encuentra la linterna (✓)."""
+    t %= 3.4
+    ancho, alto = sup.get_size()
+    sup.fill(COLOR_CUARTO)
+    # la persona: cabeza y hombros, que se distinguen del fondo
+    pygame.draw.circle(sup, COLOR_PERSONA, (62, 50), 13)
+    pygame.draw.ellipse(sup, COLOR_PERSONA, (36, 64, 52, 70))
+    # el brazo levantado con el celular, y la linterna en la mano
+    mano = (100, 48 + 3 * math.sin(t * 3))
+    pygame.draw.line(sup, COLOR_PERSONA, (80, 74), mano, 7)
+    dibujar_estela(sup, [mano], LUZ)
+    # la lámpara del fondo: prendida al principio, se apaga en t = 1.6
+    lampara = (ancho - 22, 24)
+    apagado = max(0.0, min(1.0, (t - 1.6) / 0.3))
+    color_lampara = mezclar(COLOR_LAMPARA, COLOR_LAMPARA_APAGADA, apagado)
+    if apagado < 1:
+        for radio, fuerza in ((20, 0.15), (14, 0.35)):     # el resplandor
+            pygame.draw.circle(sup, mezclar(COLOR_CUARTO, COLOR_LAMPARA, fuerza * (1 - apagado)), lampara, radio)
+    pygame.draw.circle(sup, color_lampara, lampara, 9)
+    pygame.draw.line(sup, COLOR_LAMPARA_APAGADA, (lampara[0], lampara[1] + 9), (lampara[0], alto), 2)
+    # lo que la cámara toma como "espada": un círculo que marca la luz más brillante
+    if 0.6 <= t < 1.6:
+        pygame.draw.circle(sup, ROJO, lampara, 15, 2)
+        dibujar_cruz(sup, lampara[0] - 24, lampara[1] + 2, ROJO)
+    elif t >= 2.0:
+        pygame.draw.circle(sup, VERDE, (int(mano[0]), int(mano[1])), 15, 2)
+        dibujar_tilde(sup, int(mano[0]) + 2, int(mano[1]) + 26, VERDE)
+
 
 def animar_cortar(sup, t, imagenes, fuentes):
     """Una naranja sube, la luz pasa por encima y la corta: +1 punto."""
@@ -341,6 +385,8 @@ class Tarjeta:
 # Los segundos de los sonidos coinciden con lo que pasa en cada animación
 # (por ejemplo, en animar_cortar la luz corta la naranja en t = 1.0).
 TARJETAS = [
+    Tarjeta("PREPARÁ EL LUGAR", "Que la cámara te vea, pero sin nada más brillante que la linterna.",
+            COLORES_ESPADA[5][1], animar_lugar, 3.4, [(0.6, "caida"), (2.0, "vida")]),
     Tarjeta("CORTÁ FRUTAS", "Usá la linterna como una espada: cada fruta es 1 punto.",
             VERDE, animar_cortar, 2.6, [(0.95, "corte")]),
     Tarjeta("¡BOMBAS NO!", "Si cortás una bomba, perdés una vida.", ROJO, animar_bomba,

@@ -38,7 +38,9 @@ y con **F** de nuevo se vuelve a pantalla completa. Se puede cambiar en `ajustes
 Al abrirse, el juego muestra una **intro**: pantalla negra, dos espadazos de luz que forman una X
 y aparece el título. Dura unos 5 segundos; cualquier tecla la adelanta.
 
-Después viene el **tutorial**: las 5 reglas pasan de a una, en tarjetas grandes, al estilo motion
+Después viene el **tutorial**. La primera tarjeta, **"Prepará el lugar"**, muestra cómo tiene que
+estar el cuarto: una persona con la linterna y una lámpara prendida atrás; la cámara toma la lámpara
+como espada (✗), la lámpara se apaga y la cámara encuentra la linterna (✓). Después, las 5 reglas pasan de a una, en tarjetas grandes, al estilo motion
 graphics. Cada tarjeta entra desde la derecha con un "zas" de katana, muestra su animación con los
 sonidos de lo que pasa (el corte, la bomba, la fruta que cae, el +1 vida, la bomba mortal) y sale por
 la izquierda. Con **→** (o ENTER) se pasa a la siguiente, y con **ESPACIO**, **ESC** o el botón
@@ -143,7 +145,9 @@ anaranjado a la derecha.
 
 ### En qué condiciones funciona mejor
 
-- **Luz:** un cuarto con poca luz. Cuanto más oscuro, más se distingue la linterna del resto.
+- **Luz:** un ambiente iluminado, con luz suficiente para que la cámara distinga tu forma, pero
+  **sin nada más brillante que la linterna**. Si hay algo más brillante, OpenCV lo toma como la
+  espada. Es lo primero que explica el tutorial.
 - **Fondo:** sin lámparas, ventanas, pantallas ni paredes blancas brillantes detrás del jugador,
   porque la cámara las puede tomar como la linterna (o como su reflejo).
 - **Distancia:** lo bastante lejos para que, con el brazo estirado, la linterna llegue a los bordes

@@ -208,6 +208,11 @@ TAMANIO_NUMERO_TUTORIAL = 3.2   # el número grande de fondo ("01"), en veces la
 BOTON_SALTEAR = (ANCHO - 170, ALTO - 56, 150, 40)   # x, y, ancho, alto (abajo a la derecha)
 
 # --- Pantalla de inicio: tarjetas con las reglas y su animación ---
+# Colores de la animación "Prepará el lugar" (el cuarto donde se juega)
+COLOR_CUARTO = (46, 50, 68)          # un cuarto iluminado: se ve, no es negro
+COLOR_PERSONA = (104, 110, 138)      # la silueta del jugador, más clara que el fondo
+COLOR_LAMPARA = (255, 236, 190)      # la lámpara prendida (más brillante que la linterna)
+COLOR_LAMPARA_APAGADA = (70, 70, 80)
 TARJETA_ANCHO = 172
 TARJETA_ALTO = 218
 TARJETA_ANIMACION_ALTO = 108   # alto de la parte de la tarjeta donde va la animación
