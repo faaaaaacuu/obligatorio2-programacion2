@@ -18,6 +18,7 @@ import pygame
 from ajustes import (BLANCO, NEGRO, CONTORNO, MARRON, VERDE_HOJA, GRIS, ROJO, AMARILLO,
                      LACA, MADERA, MADERA_CLARA, ROJO_FAROL, SHOJI_COLUMNAS, SHOJI_FILAS,
                      OPACIDAD_SHOJI, GROSOR_RASTRO)
+from ajustes import SOMBRA_TEXTO, CORRIDA_SOMBRA
 from ajustes import ESPACIO_TECLA, SEPARACION_ATAJOS
 from ajustes import (CORTEZA_SANDIA, COLOR_BOMBA, COLOR_CUERPO_MORTAL, COLOR_MECHA,
                      COLOR_CRUZ_BOMBA, CHISPA_MECHA, COLOR_VIDA_VACIA, LUZ_VELA, COLOR_FONDO_BARRA)
@@ -381,12 +382,9 @@ def dibujar_tecla_chica(pantalla, fuente, letra, x, y, alto, color):
     ancho = ancho_tecla(fuente, letra, alto)
     tecla = pygame.Rect(int(x), int(y), ancho, alto)
     radio = max(3, alto // 5)
-    pygame.draw.rect(pantalla, CONTORNO, tecla.move(0, 3), border_radius=radio)   # el costado de la tecla
+    # el costado de la tecla, del mismo color pero más oscuro (sin contorno negro)
+    pygame.draw.rect(pantalla, mezclar(color, NEGRO, 0.5), tecla.move(0, 2), border_radius=radio)
     pygame.draw.rect(pantalla, color, tecla, border_radius=radio)
-    # una línea más clara arriba, como la luz sobre el borde de la tecla
-    pygame.draw.line(pantalla, mezclar(color, BLANCO, 0.5), (tecla.left + radio, tecla.top + 2),
-                     (tecla.right - radio - 1, tecla.top + 2), 1)
-    pygame.draw.rect(pantalla, CONTORNO, tecla, 1, border_radius=radio)
     imagen = fuente.render(letra, True, CONTORNO)
     pantalla.blit(imagen, imagen.get_rect(center=tecla.center))
     return ancho
@@ -434,17 +432,17 @@ def dibujar_atajos(pantalla, atajos, fuente_texto, fuente_tecla, alto, color_tex
 
 
 def dibujar_texto(pantalla, mensaje, fuente, color, posicion, centrado=True):
-    """Escribe un texto con borde oscuro para que se lea sobre la cámara."""
-    borde = fuente.render(mensaje, True, CONTORNO)
+    """Escribe un texto con una sombra suave debajo, para que se lea sobre la cámara
+    sin necesidad de un contorno grueso."""
     imagen = fuente.render(mensaje, True, color)
+    sombra = fuente.render(mensaje, True, NEGRO)
+    sombra.set_alpha(SOMBRA_TEXTO)
     rect = imagen.get_rect()
     if centrado:
         rect.center = posicion
     else:
         rect.topleft = posicion
-    # el mismo texto en oscuro, corrido un poquito para cada lado, hace de borde
-    for dx, dy in ((-2, 0), (2, 0), (0, -2), (0, 2), (3, 3)):
-        pantalla.blit(borde, rect.move(dx, dy))
+    pantalla.blit(sombra, rect.move(0, CORRIDA_SOMBRA))
     pantalla.blit(imagen, rect)
 
 
@@ -486,9 +484,9 @@ def crear_panel(ancho, alto):
     """Devuelve un panel de laca negra con un filete dorado, para poner textos encima."""
     sup = pygame.Surface((ancho, alto), pygame.SRCALPHA)
     rect = sup.get_rect()
-    pygame.draw.rect(sup, (*LACA, 215), rect, border_radius=4)
-    pygame.draw.rect(sup, (*AMARILLO, 190), rect, 1, border_radius=4)
-    pygame.draw.rect(sup, (*AMARILLO, 60), rect.inflate(-8, -8), 1, border_radius=2)
+    # un solo filete, fino y tenue: el panel acompaña sin recargar
+    pygame.draw.rect(sup, (*LACA, 200), rect, border_radius=8)
+    pygame.draw.rect(sup, (*AMARILLO, 70), rect, 1, border_radius=8)
     return sup
 
 

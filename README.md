@@ -11,8 +11,7 @@ Repositorio: https://github.com/faaaaaacuu/obligatorio2-programacion2
 
 ## Instalación
 
-Se necesita Python 3.9 o más nuevo, una cámara web y un celular con linterna.
-
+Se necesita Python 3.9 o más nuevo, una cámara web y una fuente de luz puntual
 ```bash
 pip install -r requirements.txt
 ```
@@ -217,7 +216,7 @@ La tecla **M** muestra un recuadro abajo a la derecha con lo que se está detect
 | `resultados.py`      | Lee y guarda el récord y el historial del versus (`resultados.json`)     |
 | `graficos.py`        | Funciones que dibujan las frutas, bombas, corazones, paneles y el brillo de la espada |
 | `ajustes.py`         | Constantes: colores, frutas de cada jugador, tamaños, velocidades, niveles y rangos de detección |
-| `fuentes/`           | Tipografías Shojumaru y Potta One, con sus licencias (OFL)                |
+| `fuentes/`           | Tipografías Shojumaru, Inter y Potta One, con sus licencias (OFL)        |
 | `sonidos/`           | Efectos de sonido (los cortes suenan a katana) y la música de fondo (`musica_menu.wav` y `musica_0.wav` a `musica_3.wav`) |
 | `generar_sonidos.py` | Script que generó los `.wav` (no hace falta correrlo para jugar)          |
 
@@ -257,8 +256,13 @@ pincelada) en la intro y en la cuenta regresiva, y un sello rojo (*hanko*) con e
 Las vidas son sellos redondos bermellón.
 
 Las tipografías vienen incluidas en la carpeta `fuentes/` (licencia libre SIL OFL, con su archivo de
-licencia al lado), así el juego se ve igual en cualquier compu: **Shojumaru** para los títulos, con
-trazo de pincel japonés, y **Potta One** para los textos y el kanji del sello.
+licencia al lado), así el juego se ve igual en cualquier compu: **Shojumaru**, con trazo de pincel
+japonés, solo para el título y los momentos grandes; **Inter**, una letra limpia pensada para
+pantallas, para todos los demás textos; y **Potta One** solo para los kanji (Inter no los tiene).
+
+Los textos no llevan contorno: tienen una sombra suave debajo (`SOMBRA_TEXTO` en `ajustes.py`), que
+alcanza para leerlos sobre la cámara oscurecida. Los paneles tienen un solo filete dorado, fino, y
+las teclas dibujadas no tienen borde negro: el costado es el mismo color, más oscuro.
 
 - **Frutas con volumen:** cada fruta es una pila de óvalos, cada uno más chico, más claro y corrido
   hacia arriba a la izquierda, lo que da sensación de esfera. La imagen se arma una sola vez cuando
@@ -333,6 +337,7 @@ están incluidos). Es todo original: no usa grabaciones ni canciones de nadie.
   licencia está al lado de la fuente, en la carpeta `fuentes/`:
   - **Shojumaru**, de Brian J. Bonislawsky (Astigmatic), 2012 (`fuentes/OFL-Shojumaru.txt`).
   - **Potta One**, de The Potta Project Authors, 2020, https://github.com/go108go/Potta (`fuentes/OFL-PottaOne.txt`).
+  - **Inter** (Medium y SemiBold), de The Inter Project Authors, 2016-2023, https://github.com/rsms/inter (`fuentes/OFL-Inter.txt`).
 
 ## Uso de inteligencia artificial
 

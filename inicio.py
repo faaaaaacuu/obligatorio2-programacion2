@@ -376,9 +376,8 @@ def dibujar_tecla(pantalla, fuente, letra, x, y, tiempo):
     """Una tecla amarilla que "late", para mostrar qué apretar."""
     latido = (math.sin(tiempo * 4) + 1) / 2
     tecla = pygame.Rect(x, y + int(2 * latido), 48, 48)
-    pygame.draw.rect(pantalla, CONTORNO, tecla.move(0, 4), border_radius=10)    # sombra
+    pygame.draw.rect(pantalla, mezclar(AMARILLO, NEGRO, 0.5), tecla.move(0, 3), border_radius=10)   # costado
     pygame.draw.rect(pantalla, mezclar(AMARILLO, BLANCO, latido * 0.4), tecla, border_radius=10)
-    pygame.draw.rect(pantalla, CONTORNO, tecla, 2, border_radius=10)
     imagen = fuente.render(letra, True, CONTORNO)
     pantalla.blit(imagen, imagen.get_rect(center=tecla.center))
 
@@ -408,7 +407,7 @@ def dibujar_inicio(pantalla, fuentes, imagenes, tiempo, hay_luz, color, record, 
         panel = pygame.Rect((x, y), PANEL_MODO)
         graficos.registrar_zona(panel, tecla)
         if panel.collidepoint(pygame.mouse.get_pos()):
-            pygame.draw.rect(pantalla, BLANCO, panel, 2, border_radius=4)
+            pygame.draw.rect(pantalla, BLANCO, panel, 1, border_radius=8)
         dibujar_tecla(pantalla, fuentes["grande"], tecla, x + 14, y + 11, tiempo + i)
         dibujar_texto(pantalla, titulo, fuentes["media"], AMARILLO, (x + 76, y + 12), False)
         dibujar_texto(pantalla, detalle, fuentes["texto"], BLANCO, (x + 76, y + 44), False)

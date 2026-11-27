@@ -104,14 +104,14 @@ def cargar_fuente(archivo, tamanio):
 def cargar_fuentes():
     """Devuelve un diccionario con las fuentes de distintos tamaños."""
     return {
-        "titulo": cargar_fuente(ARCHIVO_FUENTE_TITULO, 56),
-        "grande": cargar_fuente(ARCHIVO_FUENTE_TITULO, 34),
-        "tarjeta": cargar_fuente(ARCHIVO_FUENTE_TITULO, 15),
-        "media": cargar_fuente(ARCHIVO_FUENTE_TEXTO, 20),
-        "chica": cargar_fuente(ARCHIVO_FUENTE_TEXTO, 14),
-        "texto": cargar_fuente(ARCHIVO_FUENTE_TEXTO, 12),
-        "numero": cargar_fuente(ARCHIVO_FUENTE_TEXTO, 36),   # números claros (el 0 de Shojumaru confunde)
-        "numero_grande": cargar_fuente(ARCHIVO_FUENTE_TEXTO, 60),
+        "titulo": cargar_fuente(ARCHIVO_FUENTE_TITULO, 56),      # el pincel japonés, solo para lo grande
+        "grande": cargar_fuente(ARCHIVO_FUENTE_UI_FUERTE, 32),
+        "tarjeta": cargar_fuente(ARCHIVO_FUENTE_UI_FUERTE, 15),
+        "media": cargar_fuente(ARCHIVO_FUENTE_UI, 20),
+        "chica": cargar_fuente(ARCHIVO_FUENTE_UI, 14),
+        "texto": cargar_fuente(ARCHIVO_FUENTE_UI, 12),
+        "numero": cargar_fuente(ARCHIVO_FUENTE_UI_FUERTE, 36),
+        "numero_grande": cargar_fuente(ARCHIVO_FUENTE_UI_FUERTE, 60),
         "kanji": cargar_fuente(ARCHIVO_FUENTE_TEXTO, 40),
         "kanji_chico": cargar_fuente(ARCHIVO_FUENTE_TEXTO, 26),
     }

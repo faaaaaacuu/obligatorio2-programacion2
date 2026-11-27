@@ -12,10 +12,15 @@ PANTALLA_COMPLETA = True   # el juego se agranda a toda la pantalla (tecla F par
 # Fuentes que se prueban en orden (si no está ninguna, pygame usa la suya)
 # Estética: dojo japonés de noche, minimalista. Las fuentes vienen con el juego
 # (carpeta fuentes/, licencia libre OFL), así se ven igual en cualquier compu:
-#   Shojumaru: títulos, con trazo de pincel japonés
-#   Potta One: textos y el kanji del sello
+#   Shojumaru: el título del juego y los momentos grandes, con trazo de pincel japonés
+#   Inter: todos los demás textos (limpia y fácil de leer, pensada para pantallas)
+#   Potta One: solo los kanji (Inter no tiene letras japonesas)
 ARCHIVO_FUENTE_TITULO = "fuentes/Shojumaru-Regular.ttf"
-ARCHIVO_FUENTE_TEXTO = "fuentes/PottaOne-Regular.ttf"
+ARCHIVO_FUENTE_UI = "fuentes/Inter-Medium.otf"
+ARCHIVO_FUENTE_UI_FUERTE = "fuentes/Inter-SemiBold.otf"
+ARCHIVO_FUENTE_TEXTO = "fuentes/PottaOne-Regular.ttf"   # la de los kanji
+SOMBRA_TEXTO = 150         # 0-255: qué tan oscura es la sombra suave debajo de los textos
+CORRIDA_SOMBRA = 2         # píxeles que la sombra está corrida hacia abajo
 FUENTE_RESPALDO = "verdana,arial"   # por si falta el archivo de alguna fuente
 KANJI = "光"                         # "luz", para el sello rojo
 
@@ -78,7 +83,7 @@ CAPA_CARTEL = (10, 9, 16, 215)       # más oscura, para los carteles
 # Reja del shoji (panel de papel japonés) que se ve sobre la cámara
 SHOJI_COLUMNAS = 8
 SHOJI_FILAS = 5
-OPACIDAD_SHOJI = 45                  # 0-255: qué tan marcada se ve la reja (poco, para no molestar)
+OPACIDAD_SHOJI = 22                  # 0-255: qué tan marcada se ve la reja (poco, para no molestar)
 COLOR_BOMBA_MORTAL = (180, 70, 255)  # violeta
 # Partículas: chispas de las bombas y de la bomba mortal
 COLORES_EXPLOSION = [(255, 140, 30), (255, 220, 60), (255, 255, 255), (90, 90, 90)]
