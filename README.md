@@ -361,36 +361,33 @@ Usé **Claude** (Anthropic) como asistente durante el desarrollo:
 - **Documentación:** para redactar y ordenar este README, agregar docstrings y pasar las constantes
   a `ajustes.py`.
 
-### Tipos de prompts
+### Cómo dirigí la herramienta
 
-El juego lo fui armando con prompts cortos, de a un cambio por vez: yo decía qué quería o qué no me
-gustaba, Claude proponía y programaba, y yo probaba el juego y volvía con lo siguiente. Los prompts
-fueron de estos tipos (los ejemplos están copiados tal cual los escribí):
+Trabajé de a un cambio por vez. En cada prompt le daba a Claude el contexto del juego, le planteaba
+el problema que veía al probarlo y le decía qué solución quería, con los límites que tenía que
+respetar. Después probaba el resultado y seguía con lo siguiente. Estos son tres ejemplos (ordenados
+y redactados a partir de lo que le pedí):
 
-- **Revisar contra la letra del obligatorio**, para ver qué faltaba.
-  "checkea la letra del obligatorio 2. fijate si cumple con todo el juego que es cortar fruta con la luz"
-- **Pedir partes nuevas del juego**, describiendo cómo las imaginaba.
-  "la primera vez que abris el juego las cards pasan de a una al estilo motion graphics explicando.
-  deben tener efectos de sonido y la posibilidad de saltear la intro"
-  "cuando queres cambiar el color, que aparezca como una paleta de colores pero asiatica para
-  elegirlas. como un mini menu desplegable"
-  "Tengo que agregar en las reglas antes [...] una animación que te muestre que tenés que estar en
-  un ambiente iluminado [...] pero que no haya algo más brillante que la linterna"
-- **Corregir lo que no funcionaba**, contando qué pasaba o pegando el error.
-  "si le diste enter a el jugador 1 no podes cambiarle el nombre. deberia poderse au que aparezca
-  ya fijo"
-  "ModuleNotFoundError: No module named 'resultados'"
-- **Ajustar el diseño cuando algo no me convencía.**
-  "es como mucha info toda junta", "esta todo medio 8bit. necesito mas limpio todo",
-  "muy generico claude"
-- **Que se use como cualquier programa.**
-  "el juego debe incluir las logicas diarias de la computadora. o sea que la gente pueda hacerlo
-  funcionar como haria funcionar cualquier otro software"
-- **Ordenar el código.**
-  "el codigo debe estar en archivos pequeños de entre 300 y 500 lineas",
-  "cambia lo de ajustes.py, ponelo todo ahi", "agrega docstrings"
-- **Documentación y entrega:** el README, el informe y el póster.
-  "podes hacer los commits y push desde aca? arregla el readme."
+> **Contexto:** es un juego en pygame y OpenCV donde se cortan frutas con la luz del celular. La
+> pantalla de inicio muestra las 5 reglas en tarjetas animadas, todas juntas.
+> **Problema:** es mucha información de golpe y nadie las lee.
+> **Solución:** que al abrir el juego, después de la intro, las tarjetas pasen de a una, grandes, al
+> estilo motion graphics, con los efectos de sonido del juego en el momento en que pasa cada cosa.
+> Se tiene que poder pasar a la siguiente o saltear todo, y la pantalla de inicio tiene que quedar
+> solo con lo necesario para empezar.
+
+> **Contexto:** el juego se maneja solo con teclas que hay que saber de antemano.
+> **Problema:** alguien que lo abre por primera vez no sabe qué hacer, y si aprieta ESC sin querer
+> pierde la partida.
+> **Solución:** que funcione como cualquier programa. Cada tecla que aparece en pantalla tiene que ser
+> también un botón que se pueda clickear, la partida se tiene que pausar con P o al cambiar de
+> ventana, tiene que preguntar antes de abandonar una partida y Cmd+Q / Ctrl+Q tienen que cerrarlo.
+
+> **Contexto:** `main.py` tiene más de 900 líneas y en la defensa tengo que explicar el código.
+> **Problema:** así es difícil de leer y de explicar.
+> **Solución:** repartir el código por tema en archivos de entre 300 y 500 líneas, sin cambiar lo que
+> hace el juego, con todo lo de OpenCV en `vision.py` como pide la letra, y comprobar que no quede
+> ningún import roto.
 
 Referencia (APA):
 
