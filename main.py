@@ -535,10 +535,12 @@ def main():
         "versus": graficos.crear_panel(MITAD - MARGEN_PANEL_VERSUS, ALTO_PANEL_VERSUS),
     }
 
-    # Estados: "intro" -> "menu" -> "cartel" (cuenta regresiva) -> "jugando" -> "perdiste"
+    # Estados: "intro" -> "tutorial" -> "menu" -> "cartel" (cuenta regresiva) -> "jugando" -> "perdiste"
     #          versus: "menu" -> "nombres" -> "cartel" -> "jugando" -> "fin_versus"
     estado = "intro"
     tiempo_intro = 0.0           # segundos desde que empezó la intro
+    tarjeta_tutorial = 0         # qué tarjeta del tutorial se está mostrando
+    tiempo_tutorial = 0.0        # segundos desde que esa tarjeta empezó a entrar
     nombres = ["", ""]           # nombres del versus (se recuerdan para la revancha)
     cual_nombre = 0              # qué nombre se está escribiendo
     indice_color = 0             # filtro de color elegido (posición en COLORES_ESPADA)
@@ -556,17 +558,33 @@ def main():
             if evento.type == pygame.QUIT:
                 corriendo = False
             elif (evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1
-                  and estado not in ("intro", "menu")
+                  and estado not in ("intro", "tutorial", "menu")
                   and pygame.Rect(BOTON_INICIO).collidepoint(evento.pos)):
                 # clic en el botón "INICIO" (si se estaba jugando, la partida se abandona)
                 pygame.key.stop_text_input()
                 estado = "menu"
+            elif (evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1
+                  and estado in ("intro", "tutorial")
+                  and pygame.Rect(BOTON_SALTEAR).collidepoint(evento.pos)):
+                estado = "menu"                 # clic en "SALTEAR": directo a la pantalla de inicio
             elif estado == "intro" and evento.type == pygame.KEYDOWN:
-                # cualquier tecla saltea la intro (ESC cierra el juego, como siempre)
+                # ESPACIO saltea todo (intro y tutorial); cualquier otra tecla pasa al tutorial.
+                # ESC cierra el juego, como siempre.
                 if evento.key == pygame.K_ESCAPE:
                     corriendo = False
-                else:
+                elif evento.key == pygame.K_SPACE:
                     estado = "menu"
+                else:
+                    estado = "tutorial"
+                    tarjeta_tutorial, tiempo_tutorial = 0, 0.0
+            elif estado == "tutorial" and evento.type == pygame.KEYDOWN:
+                # flecha (o ENTER) = siguiente tarjeta; ESPACIO o ESC = saltear el tutorial
+                if evento.key in (pygame.K_SPACE, pygame.K_ESCAPE):
+                    estado = "menu"
+                elif evento.key in (pygame.K_RIGHT, pygame.K_RETURN, pygame.K_KP_ENTER):
+                    tiempo_tutorial = inicio.pasar_tarjeta(tarjeta_tutorial, tiempo_tutorial)
+                elif evento.key == pygame.K_f:
+                    pygame.display.toggle_fullscreen()
             elif estado == "nombres":
                 # Mientras se escriben los nombres, el teclado es para escribir.
                 if evento.type == pygame.KEYDOWN and evento.key == pygame.K_ESCAPE:
@@ -633,7 +651,19 @@ def main():
             for nombre in inicio.sonidos_a_tocar(antes, tiempo_intro):
                 sonidos[nombre].play()
             if tiempo_intro >= DURACION_INTRO:
-                estado = "menu"
+                estado = "tutorial"
+                tarjeta_tutorial, tiempo_tutorial = 0, 0.0
+        elif estado == "tutorial":
+            antes = tiempo_tutorial
+            tiempo_tutorial += dt
+            for nombre in inicio.sonidos_tutorial(tarjeta_tutorial, antes, tiempo_tutorial):
+                sonidos[nombre].play()
+            if tiempo_tutorial >= inicio.duracion_tarjeta(tarjeta_tutorial):
+                # terminó de salir: entra la siguiente (o, si era la última, la pantalla de inicio)
+                tarjeta_tutorial += 1
+                tiempo_tutorial = 0.0
+                if tarjeta_tutorial == len(inicio.TARJETAS):
+                    estado = "menu"
         elif estado == "cartel":
             # cuenta regresiva: un sonido con cada número; el 3 y el 2 parecidos,
             # el 1 el más épico...
@@ -655,6 +685,10 @@ def main():
         # 4) DIBUJAR
         if estado == "intro":
             inicio.dibujar_intro(pantalla, capa_suave, capa_nitida, fuentes, imagenes_inicio, tiempo_intro)
+            inicio.dibujar_boton_saltear(pantalla, fuentes)
+        elif estado == "tutorial":
+            inicio.dibujar_tutorial(pantalla, fuentes, imagenes_inicio, tarjeta_tutorial,
+                                    tiempo_tutorial, tiempo)
         else:
             if cuadro is not None:
                 pantalla.blit(a_superficie(vision.a_rgb(cuadro)), (0, 0))

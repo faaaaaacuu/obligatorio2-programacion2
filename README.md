@@ -37,7 +37,14 @@ El juego arranca en **pantalla completa**. Con **F** se pasa a ventana (y se pue
 y con **F** de nuevo se vuelve a pantalla completa. Se puede cambiar en `ajustes.py` (`PANTALLA_COMPLETA`).
 
 Al abrirse, el juego muestra una **intro**: pantalla negra, dos espadazos de luz que forman una X
-y aparece el título. Dura unos 5 segundos y se puede saltear con cualquier tecla.
+y aparece el título. Dura unos 5 segundos; cualquier tecla la adelanta.
+
+Después viene el **tutorial**: las 5 reglas pasan de a una, en tarjetas grandes, al estilo motion
+graphics. Cada tarjeta entra desde la derecha con un "zas" de katana, muestra su animación con los
+sonidos de lo que pasa (el corte, la bomba, la fruta que cae, el +1 vida, la bomba mortal) y sale por
+la izquierda. Con **→** (o ENTER) se pasa a la siguiente, y con **ESPACIO**, **ESC** o el botón
+**SALTEAR** (abajo a la derecha) se va directo a la pantalla de inicio. Los tiempos están en
+`ajustes.py` (`TUTORIAL_...`).
 
 Después, la **pantalla de inicio** explica las reglas con 5 tarjetas animadas (cortar frutas, las bombas,
 las frutas que se caen, el triple y la bomba mortal del versus) y muestra cómo empezar cada modo.
@@ -167,6 +174,8 @@ borrar ese archivo.
 | M               | Mostrar / ocultar lo que la cámara está tomando como "luz" |
 | C               | Cambiar el color de la luz y su estela (1 jugador)         |
 | F               | Pantalla completa / ventana                                |
+| → / ENTER       | En el tutorial: pasar a la siguiente tarjeta               |
+| ESPACIO         | En la intro y el tutorial: saltearlos                      |
 | ESC             | Volver a la pantalla de inicio (en la pantalla de inicio: salir) |
 | Botón INICIO    | Volver a la pantalla de inicio con un clic (arriba a la izquierda) |
 | La X            | Cerrar el juego                                            |
@@ -182,7 +191,7 @@ La tecla **M** muestra un recuadro abajo a la derecha con lo que se está detect
 | `main.py`            | El bucle principal (eventos, actualizar, dibujar, `reloj.tick`) y los estados del juego |
 | `vision.py`          | Todo lo de OpenCV: abrir la cámara, leer el cuadro y detectar la luz      |
 | `objetos.py`         | Las clases `Fruta`, `BombaMortal`, `Pedazo`, `Particula`, `TextoFlotante` y `Jugador` |
-| `inicio.py`          | La intro (espadazos y título) y la pantalla de inicio con las reglas animadas |
+| `inicio.py`          | La intro (espadazos y título), el tutorial y la pantalla de inicio con las reglas animadas |
 | `musica.py`          | La música de fondo: cambia de versión según la dificultad, con fundido     |
 | `resultados.py`      | Lee y guarda el récord y el historial del versus (`resultados.json`)     |
 | `graficos.py`        | Funciones que dibujan las frutas, bombas, corazones, paneles y el brillo de la espada |

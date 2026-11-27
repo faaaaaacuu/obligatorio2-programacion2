@@ -179,6 +179,16 @@ ESPADAZOS = [
 APARECE_TITULO = 1.6                  # segundo en que aparece el título (después del segundo espadazo)
 SELLO_INTRO = APARECE_TITULO + 0.75   # segundo en que se "estampa" el sello rojo
 
+# --- Tutorial: después de la intro, las tarjetas pasan de a una, grandes ---
+TUTORIAL_ENTRADA = 0.5     # segundos que tarda cada tarjeta en entrar desde la derecha
+TUTORIAL_SALIDA = 0.35     # segundos que tarda en salir por la izquierda
+TUTORIAL_PAUSA = 0.4       # segundos quieta al final de su animación, antes de salir
+TUTORIAL_ESCALA = 1.9      # qué tan grandes se ven las tarjetas (1 = como en la pantalla de inicio)
+TUTORIAL_GIRO = 10         # grados que está inclinada al entrar y al salir
+TUTORIAL_FLOTE = 4         # píxeles que sube y baja mientras está quieta
+TAMANIO_NUMERO_TUTORIAL = 3.2   # el número grande de fondo ("01"), en veces la fuente de números
+BOTON_SALTEAR = (ANCHO - 170, ALTO - 56, 150, 40)   # x, y, ancho, alto (abajo a la derecha)
+
 # --- Pantalla de inicio: tarjetas con las reglas y su animación ---
 TARJETA_ANCHO = 172
 TARJETA_ALTO = 218
