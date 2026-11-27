@@ -7,7 +7,7 @@ Para cambiar la dificultad o la detección alcanza con tocar este archivo.
 ANCHO = 960
 ALTO = 540
 FPS = 30
-TITULO = "Corte de Luz"
+TITULO = "Light Fruit Ninja"
 PANTALLA_COMPLETA = True   # el juego se agranda a toda la pantalla (tecla F para cambiar)
 # Fuentes que se prueban en orden (si no está ninguna, pygame usa la suya)
 # Estética: dojo japonés de noche, minimalista. Las fuentes vienen con el juego

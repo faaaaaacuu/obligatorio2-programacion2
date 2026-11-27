@@ -1,4 +1,4 @@
-# Corte de Luz
+# Light Fruit Ninja
 
 Obligatorio 2 de Programación 2.
 
@@ -323,4 +323,4 @@ Prompts más relevantes:
 Referencia (APA):
 
 Claude. (2026). *Prompts utilizados para la programación, los sonidos y la documentación del juego
-Corte de Luz* [Generación de código y texto]. Recuperado de https://claude.ai
+Light Fruit Ninja* [Generación de código y texto]. Recuperado de https://claude.ai

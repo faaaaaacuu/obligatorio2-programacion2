@@ -1,4 +1,4 @@
-"""Corte de Luz - juego principal.
+"""Light Fruit Ninja - juego principal.
 
 Prendé la linterna del celular, apuntala a la cámara y movela como una
 espada: cada fruta que cruza el rastro de la luz se corta. Las bombas y

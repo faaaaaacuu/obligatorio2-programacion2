@@ -19,7 +19,7 @@ from ajustes import (ANCHO, ALTO, TARJETA_ANCHO, TARJETA_ALTO, TARJETA_ANIMACION
                      SEPARACION_TARJETAS, Y_TARJETAS, RADIO_FRUTA_DEMO, DESFASE_TARJETAS,
                      FRUTAS_JUGADOR_1, FRUTAS_JUGADOR_2, COLORES_ESPADA, COLOR_JUGADOR_1,
                      COLOR_JUGADOR_2, COLOR_BOMBA_MORTAL, BLANCO, NEGRO, AMARILLO, VERDE,
-                     ROJO, GRIS, CONTORNO, DESENFOQUE_BRILLO, COLORES_INTRO, KANJI, ARCHIVO_FUENTE_TEXTO, LUZ_FAROL)
+                     ROJO, GRIS, CONTORNO, DESENFOQUE_BRILLO, COLORES_INTRO, KANJI, ARCHIVO_FUENTE_TEXTO, LUZ_FAROL, TITULO)
 from ajustes import (COLORES_EXPLOSION, COLOR_DESTELLO_TARJETA, COLOR_DESTELLO_INTRO,
                      TAMANIO_VIDA_TARJETA, PANEL_MODO, ESPADAZOS, APARECE_TITULO, SELLO_INTRO)
 
@@ -342,7 +342,7 @@ TARJETAS = [
 def dibujar_titulo(pantalla, fuente, tiempo, sello):
     """El título con el sello rojo al lado. Las letras se mecen apenas y les
     pasa un brillo dorado, despacio (minimalista)."""
-    texto = "CORTE DE LUZ"
+    texto = TITULO.upper()
     ancho = fuente.size(texto)[0]
     if sello is not None:
         ancho += 16 + sello.get_width()
@@ -474,14 +474,14 @@ def dibujar_intro(pantalla, capa_suave, capa_nitida, fuentes, imagenes, t):
         # el título entra grande y "golpea" hasta su tamaño normal
         avance = min(1.0, dt / 0.35)
         escala = 1 + 0.7 * (1 - avance) ** 3
-        ancho, alto = fuentes["titulo"].size("CORTE DE LUZ")
+        ancho, alto = fuentes["titulo"].size(TITULO.upper())
         titulo = pygame.Surface((ancho + 12, alto + 12), pygame.SRCALPHA)
-        dibujar_texto(titulo, "CORTE DE LUZ", fuentes["titulo"], AMARILLO, (ancho // 2 + 6, alto // 2 + 6))
+        dibujar_texto(titulo, TITULO.upper(), fuentes["titulo"], AMARILLO, (ancho // 2 + 6, alto // 2 + 6))
         titulo = pygame.transform.rotozoom(titulo, 0, 1.15 * escala)
         # resplandor del título: el mismo texto (más oscuro y sobre fondo negro, porque al
         # SUMARLO a la pantalla el negro no aporta nada), achicado, borroneado y agrandado
         # al tamaño del título que se ve
-        texto = fuentes["titulo"].render("CORTE DE LUZ", True, mezclar(NEGRO, AMARILLO, 0.6), NEGRO)
+        texto = fuentes["titulo"].render(TITULO.upper(), True, mezclar(NEGRO, AMARILLO, 0.6), NEGRO)
         margen = alto                     # lugar para que el brillo se desvanezca antes del borde
         lienzo = pygame.Surface((ancho + 2 * margen, alto + 2 * margen))
         lienzo.fill(NEGRO)
