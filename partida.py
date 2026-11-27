@@ -3,14 +3,12 @@ dibuja encima (puntos, vidas, carteles de pausa y de fin) y los resultados que
 quedan guardados (el récord y el historial del versus, en resultados.json).
 """
 
-import math
-import pygame
-
-import resultados
-
-from datetime import datetime
 import json
+import math
 import os
+from datetime import datetime
+
+import pygame
 
 import graficos
 import inicio
@@ -191,10 +189,10 @@ def actualizar_partida(juego, luces, dt, sonidos):
 def terminar_partida(juego, datos):
     """Guarda el resultado de la partida que acaba de terminar."""
     if juego["modo"] == 1:
-        juego["nuevo_record"] = partida.registrar_puntaje(datos, juego["jugadores"][0].puntos)
+        juego["nuevo_record"] = registrar_puntaje(datos, juego["jugadores"][0].puntos)
     else:
         uno, dos = juego["jugadores"]
-        partida.registrar_versus(datos, uno, dos, juego["ganador"], juego["tiempo"])
+        registrar_versus(datos, uno, dos, juego["ganador"], juego["tiempo"])
 
 
 def frutas(cantidad):
@@ -383,7 +381,7 @@ def dibujar_carteles(pantalla, estado, juego, fuentes, hay_luz, umbral, tiempo, 
                       COLOR_JUGADOR_2, (centro + 210, 125))
         dibujar_texto(pantalla, f"Duración: {formato_tiempo(juego['tiempo'])}", fuentes["chica"],
                       GRIS, (centro, 155))
-        ganadas1, ganadas2, empates = partida.historial_entre(datos["versus"], uno.nombre, dos.nombre)
+        ganadas1, ganadas2, empates = historial_entre(datos["versus"], uno.nombre, dos.nombre)
         historial = f"Historial: {uno.nombre} {ganadas1} - {ganadas2} {dos.nombre}"
         if empates:
             historial += f"   ({empates} empate{'s' if empates > 1 else ''})"

@@ -41,8 +41,6 @@ os.environ.setdefault("SDL_RENDER_SCALE_QUALITY", "linear")
 
 import pygame
 
-import resultados
-from musica import Musica
 
 import graficos
 import inicio
