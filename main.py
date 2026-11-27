@@ -548,6 +548,8 @@ def main():
     nombres = ["", ""]           # nombres del versus (se recuerdan para la revancha)
     cual_nombre = 0              # qué nombre se está escribiendo
     indice_color = 0             # filtro de color elegido (posición en COLORES_ESPADA)
+    paleta_abierta = False       # la paleta de colores de la pantalla de inicio (tecla C)
+    tiempo_paleta = 0.0          # segundos desde que se abrió (para que se despliegue)
     sin_luz_menu = 0.0           # en el menú: segundos seguidos sin ver ninguna linterna
     juego = nueva_partida(1, nombres, datos["record"], COLORES_ESPADA[indice_color][1])
     umbral = UMBRAL_BRILLO
@@ -571,6 +573,22 @@ def main():
                   and estado in ("intro", "tutorial")
                   and pygame.Rect(BOTON_SALTEAR).collidepoint(evento.pos)):
                 estado = "menu"                 # clic en "SALTEAR": directo a la pantalla de inicio
+            elif (evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1
+                  and estado == "menu" and paleta_abierta):
+                # clic en una piedra: se elige ese color; clic afuera: se cierra sin cambiar
+                elegido = inicio.piedra_en(evento.pos)
+                if elegido is not None:
+                    indice_color = elegido
+                paleta_abierta = False
+            elif estado == "menu" and paleta_abierta and evento.type == pygame.KEYDOWN:
+                # con la paleta abierta, las flechas eligen (el color cambia al instante)
+                if evento.key == pygame.K_LEFT:
+                    indice_color = (indice_color - 1) % len(COLORES_ESPADA)
+                elif evento.key == pygame.K_RIGHT:
+                    indice_color = (indice_color + 1) % len(COLORES_ESPADA)
+                elif evento.key in (pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_c,
+                                    pygame.K_ESCAPE, pygame.K_SPACE):
+                    paleta_abierta = False
             elif estado == "intro" and evento.type == pygame.KEYDOWN:
                 # ESPACIO saltea todo (intro y tutorial); cualquier otra tecla pasa al tutorial.
                 # ESC cierra el juego, como siempre.
@@ -625,8 +643,11 @@ def main():
                     tarjeta_tutorial, tiempo_tutorial = 0, 0.0
                 elif evento.key == pygame.K_f:
                     pygame.display.toggle_fullscreen()   # en ventana aparece la X para cerrar
+                elif evento.key == pygame.K_c and estado == "menu":
+                    paleta_abierta = True           # se despliega la paleta de colores
+                    tiempo_paleta = 0.0
                 elif evento.key == pygame.K_c:
-                    # siguiente filtro de color (jugando solo, se aplica al instante)
+                    # en medio de la partida no se abre la paleta: pasa al siguiente color
                     indice_color = (indice_color + 1) % len(COLORES_ESPADA)
                     if juego["modo"] == 1:
                         juego["jugadores"][0].color = COLORES_ESPADA[indice_color][1]
@@ -648,6 +669,9 @@ def main():
 
         # 3) ACTUALIZAR
         tiempo += dt
+        if estado != "menu":
+            paleta_abierta = False          # la paleta solo existe en la pantalla de inicio
+        tiempo_paleta += dt
         # en el menú, la linterna también se da por perdida recién a los TOLERANCIA_SIN_LUZ segundos
         if any(luz is not None for luz in luces):
             sin_luz_menu = 0.0
@@ -735,6 +759,8 @@ def main():
             else:
                 dibujar_carteles(pantalla, estado, juego, fuentes, sin_luz_menu <= TOLERANCIA_SIN_LUZ,
                                  umbral, tiempo, datos, COLORES_ESPADA[indice_color], imagenes_inicio)
+            if estado == "menu" and paleta_abierta:
+                inicio.dibujar_paleta(pantalla, fuentes, imagenes_inicio, indice_color, tiempo_paleta)
             # cómo volver a la pantalla de inicio: el botón, o mientras se juega solo un aviso chico
             if estado == "jugando" and not esta_pausado(juego):
                 dibujar_atajos(pantalla, [(("ESC",), "inicio")], fuentes["texto"], fuentes["texto"],

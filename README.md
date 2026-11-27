@@ -121,9 +121,12 @@ que lo que puede una mano (`VELOCIDAD_MAXIMA_LUZ` = 2500 píxeles por segundo; p
 centro a la esquina de arriba en 0,2 s), ese punto no cuenta. Si el reflejo se queda quieto, al
 rato se acepta, pero como un trazo nuevo, sin unir los dos lugares.
 
-**Filtro de color:** el punto de luz y su estela se tiñen de un color. Jugando solo, la tecla **C**
-cambia entre cian, verde, rosa, rojo, violeta y amarillo (también en medio de la partida). En el
-versus cada jugador tiene el suyo: celeste a la izquierda y naranja a la derecha.
+**Filtro de color:** el punto de luz y su estela se tiñen de un color. En la pantalla de inicio, la
+tecla **C** despliega una **paleta**: un panel de laca con seis "piedras de tinta", cada una con su
+kanji: oro (金), bermellón (朱), jade (翠), sakura (桜), índigo (藍) y luna (月). Se elige con las
+flechas o con un clic, y ENTER la cierra. En medio de la partida (jugando solo), **C** pasa directo
+al color siguiente. En el versus cada jugador tiene el suyo: jade a la izquierda y bermellón
+anaranjado a la derecha.
 
 ### En qué condiciones funciona mejor
 
@@ -172,7 +175,7 @@ borrar ese archivo.
 | ESPACIO         | Volver a jugar el mismo modo                               |
 | + / -           | Subir / bajar el umbral de brillo de la detección          |
 | M               | Mostrar / ocultar lo que la cámara está tomando como "luz" |
-| C               | Cambiar el color de la luz y su estela (1 jugador)         |
+| C               | Paleta de colores de la luz (en la partida: color siguiente) |
 | F               | Pantalla completa / ventana                                |
 | → / ENTER       | En el tutorial: pasar a la siguiente tarjeta               |
 | R               | En la pantalla de inicio: volver a ver el tutorial         |

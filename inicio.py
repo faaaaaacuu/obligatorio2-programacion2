@@ -24,7 +24,8 @@ from ajustes import (COLORES_EXPLOSION, COLOR_DESTELLO_TARJETA, COLOR_DESTELLO_I
                      TAMANIO_VIDA_TARJETA, PANEL_MODO, ESPADAZOS, APARECE_TITULO, SELLO_INTRO)
 from ajustes import (TUTORIAL_ENTRADA, TUTORIAL_SALIDA, TUTORIAL_PAUSA, TUTORIAL_ESCALA, TUTORIAL_GIRO,
                      TUTORIAL_FLOTE, TAMANIO_NUMERO_TUTORIAL, BOTON_SALTEAR, LACA)
-from ajustes import ALTO_TECLA_CHICA
+from ajustes import (ALTO_TECLA_CHICA, KANJI_COLORES, TAMANIO_PIEDRA, SEPARACION_PIEDRAS, ALTO_PALETA,
+                     APERTURA_PALETA)
 
 LUZ = COLORES_ESPADA[0][1]      # color de la luz en las animaciones
 CARPETA = os.path.dirname(os.path.abspath(__file__))
@@ -64,6 +65,7 @@ def crear_imagenes(fuentes):
     imagenes["sello"] = graficos.crear_sello(KANJI, fuentes["kanji"], 64) if hay_kanji else None
     imagenes["sello_chico"] = graficos.crear_sello(KANJI, fuentes["kanji_chico"], 42) if hay_kanji else None
     imagenes["farol"] = graficos.crear_farol(70)
+    imagenes["panel_paleta"] = graficos.crear_panel(ancho_paleta(), ALTO_PALETA)
     # lienzo donde se arma cada tarjeta del tutorial antes de agrandarla y girarla
     imagenes["lienzo_tarjeta"] = pygame.Surface((TARJETA_ANCHO, TARJETA_ALTO), pygame.SRCALPHA)
     imagenes["halo_farol"] = graficos.crear_halo(70, LUZ_FAROL, alfa_maximo=90)
@@ -643,3 +645,66 @@ def dibujar_tutorial(pantalla, fuentes, imagenes, indice, t, tiempo):
     dibujar_atajos(pantalla, [(("→",), "siguiente"), (("ESPACIO",), "saltear")], fuentes["chica"],
                    fuentes["texto"], ALTO_TECLA_CHICA, GRIS, AMARILLO, (18, ALTO - 36), False)
     dibujar_boton_saltear(pantalla, fuentes)
+
+# ---------------------------------------------------------------------------
+# Paleta de colores: con C, en la pantalla de inicio se despliega hacia arriba
+# un panel de laca con una "piedra de tinta" por color, cada una con su kanji.
+# ---------------------------------------------------------------------------
+
+def ancho_paleta():
+    """Devuelve el ancho del panel de la paleta (las piedras más un margen)."""
+    cantidad = len(COLORES_ESPADA)
+    return cantidad * TAMANIO_PIEDRA + (cantidad - 1) * SEPARACION_PIEDRAS + 48
+
+
+def rect_paleta():
+    """Devuelve el rectángulo del panel desplegado: centrado, justo arriba de la línea del color."""
+    rect = pygame.Rect(0, 0, ancho_paleta(), ALTO_PALETA)
+    rect.midbottom = (ANCHO // 2, ALTO - 72)
+    return rect
+
+
+def rects_piedras():
+    """Devuelve el rectángulo de cada piedra de color dentro de la paleta."""
+    panel = rect_paleta()
+    return [pygame.Rect(panel.left + 24 + i * (TAMANIO_PIEDRA + SEPARACION_PIEDRAS), panel.top + 22,
+                        TAMANIO_PIEDRA, TAMANIO_PIEDRA) for i in range(len(COLORES_ESPADA))]
+
+
+def piedra_en(posicion):
+    """Devuelve el número de la piedra que está en `posicion` (un clic), o None."""
+    for i, rect in enumerate(rects_piedras()):
+        if rect.collidepoint(posicion):
+            return i
+    return None
+
+
+def dibujar_paleta(pantalla, fuentes, imagenes, elegido, t):
+    """Dibuja la paleta desplegada. `elegido` es el color marcado y `t` los segundos
+    desde que se abrió: el panel se despliega de abajo hacia arriba, como un pergamino."""
+    panel = rect_paleta()
+    apertura = min(1.0, t / APERTURA_PALETA)
+    apertura = 1 - (1 - apertura) ** 3          # frena al final
+    visible = pygame.Rect(panel.left, panel.bottom - int(panel.height * apertura), panel.width,
+                          int(panel.height * apertura))
+    pantalla.set_clip(visible)                  # solo se ve la parte ya desplegada
+    pantalla.blit(imagenes["panel_paleta"], panel)
+    for i, (rect, (nombre, color)) in enumerate(zip(rects_piedras(), COLORES_ESPADA)):
+        if i == elegido:
+            rect = rect.move(0, -4)             # la elegida se levanta un poquito
+            pygame.draw.rect(pantalla, AMARILLO, rect.inflate(10, 10), 2, border_radius=12)
+        # la piedra: el color con un borde más claro adentro, como un sello
+        pygame.draw.rect(pantalla, CONTORNO, rect.move(0, 3), border_radius=10)
+        pygame.draw.rect(pantalla, color, rect, border_radius=10)
+        pygame.draw.rect(pantalla, mezclar(color, BLANCO, 0.35), rect.inflate(-8, -8), 1, border_radius=7)
+        kanji = fuentes["kanji_chico"].render(KANJI_COLORES[i], True, mezclar(color, CONTORNO, 0.75))
+        pantalla.blit(kanji, kanji.get_rect(center=(rect.centerx, rect.centery + 1)))
+        dibujar_texto(pantalla, nombre, fuentes["texto"], color if i == elegido else GRIS,
+                      (rect.centerx, rect.bottom + 16))
+    dibujar_atajos(pantalla, [(("←", "→"), "elegir"), (("ENTER",), "listo")], fuentes["texto"],
+                   fuentes["texto"], 20, GRIS, AMARILLO, (panel.centerx, panel.bottom - 20))
+    pantalla.set_clip(None)
+    # piquito abajo que apunta a la línea del color (como un menú desplegable)
+    if apertura >= 1:
+        x, y = panel.centerx, panel.bottom
+        pygame.draw.polygon(pantalla, AMARILLO, [(x - 8, y), (x + 8, y), (x, y + 8)])
