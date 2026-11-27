@@ -142,6 +142,7 @@ def nueva_partida(modo, nombres, record, color):
         "modo": modo,
         "jugadores": jugadores,
         "cartel": DURACION_CARTEL,  # cuenta regresiva antes de empezar
+        "pausa": None,              # None, "manual" (tecla P o se cambió de ventana) o "salir" (pregunta si abandonar)
         "numero_cuenta": None,      # el último número de la cuenta regresiva que sonó
         "tiempo": 0.0,              # segundos jugados (sin contar las pausas)
         "record": record,           # el récord que había al empezar
@@ -194,8 +195,37 @@ def intensidad_de_musica(estado, juego):
 
 
 def esta_pausado(juego):
-    """Devuelve True si la cámara perdió la linterna de algún jugador."""
+    """Devuelve True si la partida está frenada: porque el jugador la pausó, porque se
+    está preguntando si abandonarla o porque la cámara perdió la linterna de alguien."""
+    if juego["pausa"] is not None:
+        return True
     return any(jugador.perdio_la_luz() for jugador in juego["jugadores"])
+
+
+# Teclas que se dibujan con una palabra o un símbolo, y la tecla de verdad que representan.
+TECLAS_CON_NOMBRE = {"ESC": pygame.K_ESCAPE, "ESPACIO": pygame.K_SPACE, "ENTER": pygame.K_RETURN,
+                     "BORRAR": pygame.K_BACKSPACE, "←": pygame.K_LEFT, "→": pygame.K_RIGHT,
+                     "+": pygame.K_PLUS, "-": pygame.K_MINUS}
+
+
+def tecla_de(etiqueta):
+    """Devuelve el código de pygame de una tecla dibujada ("ESC", "R", "1"...)."""
+    if etiqueta in TECLAS_CON_NOMBRE:
+        return TECLAS_CON_NOMBRE[etiqueta]
+    return pygame.key.key_code(etiqueta.lower())
+
+
+def apretar(etiqueta):
+    """Hace de cuenta que se apretó una tecla: así un clic en un botón hace
+    exactamente lo mismo que su tecla, sin repetir la lógica."""
+    pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=tecla_de(etiqueta), mod=0,
+                                         unicode="", scancode=0))
+
+
+def es_salir_del_sistema(evento):
+    """Devuelve True si es Cmd+Q (Mac) o Ctrl+Q (Windows/Linux): cerrar el programa."""
+    return (evento.type == pygame.KEYDOWN and evento.key == pygame.K_q
+            and bool(evento.mod & (pygame.KMOD_META | pygame.KMOD_CTRL)))
 
 
 def resultado_versus(jugadores):
@@ -383,6 +413,7 @@ def dibujar_boton_inicio(pantalla, fuentes):
     """El botón para volver a la pantalla de inicio. Se aprieta con ESC o
     haciendo clic; si el mouse está encima, se ilumina."""
     boton = pygame.Rect(BOTON_INICIO)
+    graficos.registrar_zona(boton, "ESC")         # hacer clic es como apretar ESC
     encima = boton.collidepoint(pygame.mouse.get_pos())
     pygame.draw.rect(pantalla, LACA, boton, border_radius=4)
     pygame.draw.rect(pantalla, BLANCO if encima else AMARILLO, boton, 2 if encima else 1, border_radius=4)
@@ -431,7 +462,18 @@ def dibujar_carteles(pantalla, estado, juego, fuentes, hay_luz, umbral, tiempo, 
     centro = ANCHO // 2
     medio = ALTO // 2
     if estado == "jugando":
-        if esta_pausado(juego):
+        if juego["pausa"] == "salir":
+            # como cualquier programa: antes de perder lo hecho, pregunta
+            dibujar_texto(pantalla, "¿ABANDONAR LA PARTIDA?", fuentes["grande"], AMARILLO, (centro, medio - 50))
+            dibujar_texto(pantalla, "Lo que llevás jugado no se guarda", fuentes["chica"], BLANCO,
+                          (centro, medio - 5))
+            dibujar_atajos(pantalla, [(("S",), "sí, abandonar"), (("N",), "no, seguir")], fuentes["media"],
+                           fuentes["chica"], ALTO_TECLA_MEDIA, BLANCO, AMARILLO, (centro, medio + 55))
+        elif juego["pausa"] == "manual":
+            dibujar_texto(pantalla, "PAUSA", fuentes["grande"], AMARILLO, (centro, medio - 50))
+            dibujar_atajos(pantalla, [(("P",), "seguir"), (("ESC",), "abandonar")], fuentes["media"],
+                           fuentes["chica"], ALTO_TECLA_MEDIA, BLANCO, AMARILLO, (centro, medio + 20))
+        elif esta_pausado(juego):
             dibujar_texto(pantalla, "PAUSA", fuentes["grande"], AMARILLO, (centro, medio - 50))
             for i, jugador in enumerate(juego["jugadores"]):
                 if jugador.perdio_la_luz():
@@ -534,6 +576,16 @@ def dibujar_carteles(pantalla, estado, juego, fuentes, hay_luz, umbral, tiempo, 
 # Programa principal
 # ---------------------------------------------------------------------------
 
+def hay_algo_clickeable(posicion, estado, paleta_abierta):
+    """Devuelve True si en `posicion` hay algo que se puede clickear (un botón, una
+    piedra de la paleta o la caja de un nombre)."""
+    if graficos.tecla_en(posicion):
+        return True
+    if estado == "menu" and paleta_abierta and inicio.piedra_en(posicion) is not None:
+        return True
+    return estado == "nombres" and any(caja_nombre(i).collidepoint(posicion) for i in (0, 1))
+
+
 def main():
     """Abre la ventana y la cámara, carga todo una sola vez y corre el bucle principal
     (eventos, actualizar, dibujar, reloj.tick). Al cerrar la ventana libera la cámara."""
@@ -585,6 +637,7 @@ def main():
     cual_nombre = 0              # qué nombre se está escribiendo
     indice_color = 0             # filtro de color elegido (posición en COLORES_ESPADA)
     paleta_abierta = False       # la paleta de colores de la pantalla de inicio (tecla C)
+    cursor_mano = False          # si el puntero del mouse es la manito (sobre un botón)
     tiempo_paleta = 0.0          # segundos desde que se abrió (para que se despliegue)
     sin_luz_menu = 0.0           # en el menú: segundos seguidos sin ver ninguna linterna
     juego = nueva_partida(1, nombres, datos["record"], COLORES_ESPADA[indice_color][1])
@@ -597,25 +650,32 @@ def main():
     while corriendo:
         # 1) EVENTOS
         for evento in pygame.event.get():
-            if evento.type == pygame.QUIT:
-                corriendo = False
-            elif (evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1
-                  and estado not in ("intro", "tutorial", "menu")
-                  and pygame.Rect(BOTON_INICIO).collidepoint(evento.pos)):
-                # clic en el botón "INICIO" (si se estaba jugando, la partida se abandona)
-                pygame.key.stop_text_input()
-                estado = "menu"
-            elif (evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1
-                  and estado in ("intro", "tutorial")
-                  and pygame.Rect(BOTON_SALTEAR).collidepoint(evento.pos)):
-                estado = "menu"                 # clic en "SALTEAR": directo a la pantalla de inicio
+            if evento.type == pygame.QUIT or es_salir_del_sistema(evento):
+                corriendo = False               # la X de la ventana, o Cmd+Q / Ctrl+Q
+            elif evento.type in (pygame.WINDOWFOCUSLOST, pygame.WINDOWMINIMIZED):
+                # si se cambia a otro programa o se minimiza, la partida se pausa sola
+                if estado == "jugando" and juego["pausa"] is None:
+                    juego["pausa"] = "manual"
             elif (evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1
                   and estado == "menu" and paleta_abierta):
-                # clic en una piedra: se elige ese color; clic afuera: se cierra sin cambiar
+                # con la paleta abierta: clic en una piedra la elige; clic en sus teclas
+                # funciona como siempre; clic afuera la cierra sin cambiar nada
                 elegido = inicio.piedra_en(evento.pos)
                 if elegido is not None:
                     indice_color = elegido
-                paleta_abierta = False
+                    paleta_abierta = False
+                elif inicio.rect_paleta().collidepoint(evento.pos):
+                    if graficos.tecla_en(evento.pos):
+                        apretar(graficos.tecla_en(evento.pos))
+                else:
+                    paleta_abierta = False
+            elif (evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1
+                  and graficos.tecla_en(evento.pos)):
+                # clic en cualquier tecla dibujada (o botón): hace lo mismo que esa tecla
+                apretar(graficos.tecla_en(evento.pos))
+            elif (evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1
+                  and estado in ("intro", "tutorial")):
+                apretar("→")                    # clic en cualquier lado: seguir adelante
             elif estado == "menu" and paleta_abierta and evento.type == pygame.KEYDOWN:
                 # con la paleta abierta, las flechas eligen (el color cambia al instante)
                 if evento.key == pygame.K_LEFT:
@@ -661,13 +721,24 @@ def main():
                         pygame.key.stop_text_input()
                         juego = nueva_partida(2, nombres, datos["record"], COLORES_ESPADA[indice_color][1])
                         estado = "cartel"
+            elif estado == "jugando" and juego["pausa"] == "salir" and evento.type == pygame.KEYDOWN:
+                # ¿abandonar la partida? S o ENTER = sí; N, ESC o P = no
+                if evento.key in (pygame.K_s, pygame.K_RETURN, pygame.K_KP_ENTER):
+                    estado = "menu"
+                elif evento.key in (pygame.K_n, pygame.K_ESCAPE, pygame.K_p):
+                    juego["pausa"] = None
             elif evento.type == pygame.KEYDOWN:
                 puede_empezar = estado in ("menu", "perdiste", "fin_versus")
                 if evento.key == pygame.K_ESCAPE:
                     if estado == "menu":
                         corriendo = False       # en la pantalla de inicio, ESC cierra el juego
+                    elif estado == "jugando":
+                        juego["pausa"] = "salir"   # en medio de la partida, primero pregunta
                     else:
                         estado = "menu"         # en las demás, vuelve a la pantalla de inicio
+                elif evento.key == pygame.K_p and estado == "jugando":
+                    # P pausa y reanuda, como en cualquier juego
+                    juego["pausa"] = None if juego["pausa"] == "manual" else "manual"
                 elif evento.key in (pygame.K_1, pygame.K_KP1) and puede_empezar:
                     juego = nueva_partida(1, nombres, datos["record"], COLORES_ESPADA[indice_color][1])
                     estado = "cartel"
@@ -675,7 +746,7 @@ def main():
                     cual_nombre = 0
                     estado = "nombres"
                     pygame.key.start_text_input()   # ahora sí, las teclas escriben
-                elif evento.key == pygame.K_SPACE and puede_empezar:
+                elif evento.key in (pygame.K_SPACE, pygame.K_RETURN, pygame.K_KP_ENTER) and puede_empezar:
                     # mismo modo que la última vez (en el versus, con los mismos nombres)
                     juego = nueva_partida(juego["modo"], nombres, datos["record"],
                                           COLORES_ESPADA[indice_color][1])
@@ -758,6 +829,7 @@ def main():
         musica.poner(intensidad_de_musica(estado, juego))   # cambia con un fundido si hace falta
 
         # 4) DIBUJAR
+        graficos.zonas_clic.clear()     # los botones de este cuadro se anotan mientras se dibujan
         if estado == "intro":
             inicio.dibujar_intro(pantalla, capa_suave, capa_nitida, fuentes, imagenes_inicio, tiempo_intro)
             inicio.dibujar_boton_saltear(pantalla, fuentes)
@@ -806,14 +878,20 @@ def main():
                 inicio.dibujar_paleta(pantalla, fuentes, imagenes_inicio, indice_color, tiempo_paleta)
             # cómo volver a la pantalla de inicio: el botón, o mientras se juega solo un aviso chico
             if estado == "jugando" and not esta_pausado(juego):
-                dibujar_atajos(pantalla, [(("ESC",), "inicio")], fuentes["texto"], fuentes["texto"],
-                               ALTO_TECLA_CHICA, GRIS, GRIS, (18, ALTO - 24), False)
-            elif estado != "menu":
+                dibujar_atajos(pantalla, [(("P",), "pausa"), (("ESC",), "salir")], fuentes["texto"],
+                               fuentes["texto"], ALTO_TECLA_CHICA, GRIS, GRIS, (18, ALTO - 24), False)
+            elif estado != "menu" and not (estado == "jugando" and juego["pausa"] == "salir"):
                 dibujar_boton_inicio(pantalla, fuentes)
 
             if ver_mascara and cuadro is not None:
                 chica = vision.mascara_chica_rgb(cuadro, umbral, ANCHO // 4, ALTO // 4)
                 pantalla.blit(a_superficie(chica), (ANCHO - ANCHO // 4 - 10, ALTO - ALTO // 4 - 10))
+
+        # el puntero se vuelve una manito sobre lo que se puede clickear, como en cualquier programa
+        mano = hay_algo_clickeable(pygame.mouse.get_pos(), estado, paleta_abierta)
+        if mano != cursor_mano:
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND if mano else pygame.SYSTEM_CURSOR_ARROW)
+            cursor_mano = mano
 
         pygame.display.flip()
         dt = min(reloj.tick(FPS) / 1000, DT_MAXIMO)  # tope por si un cuadro tarda mucho

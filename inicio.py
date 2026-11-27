@@ -404,6 +404,11 @@ def dibujar_inicio(pantalla, fuentes, imagenes, tiempo, hay_luz, color, record, 
     for i, (tecla, titulo, detalle) in enumerate(modos):
         x = centro - 350 + i * 360
         pantalla.blit(imagenes["modo"], (x, y))
+        # todo el panel es un botón: con un clic empieza ese modo
+        panel = pygame.Rect((x, y), PANEL_MODO)
+        graficos.registrar_zona(panel, tecla)
+        if panel.collidepoint(pygame.mouse.get_pos()):
+            pygame.draw.rect(pantalla, BLANCO, panel, 2, border_radius=4)
         dibujar_tecla(pantalla, fuentes["grande"], tecla, x + 14, y + 11, tiempo + i)
         dibujar_texto(pantalla, titulo, fuentes["media"], AMARILLO, (x + 76, y + 12), False)
         dibujar_texto(pantalla, detalle, fuentes["texto"], BLANCO, (x + 76, y + 44), False)
@@ -584,6 +589,7 @@ def dibujar_boton_saltear(pantalla, fuentes):
     """El botón para saltear el tutorial (también con ESPACIO o ESC). Se ilumina
     si el mouse está encima."""
     boton = pygame.Rect(BOTON_SALTEAR)
+    graficos.registrar_zona(boton, "ESPACIO")     # hacer clic es como apretar ESPACIO
     encima = boton.collidepoint(pygame.mouse.get_pos())
     pygame.draw.rect(pantalla, LACA, boton, border_radius=4)
     pygame.draw.rect(pantalla, BLANCO if encima else AMARILLO, boton, 2 if encima else 1, border_radius=4)

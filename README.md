@@ -64,7 +64,19 @@ y si la cámara ve la linterna. Las reglas no se repiten ahí; con **R** se vuel
 - Al terminar, **ESPACIO** arranca otra partida del mismo modo sin cerrar la ventana
   (o **1** / **2** para cambiar de modo).
 - **ESC** (o el botón **INICIO**) vuelve a la pantalla de inicio desde cualquier lado. Si se
-  estaba jugando, esa partida se abandona y no se guarda.
+  está jugando, primero pregunta **"¿Abandonar la partida?"** (**S** sí / **N** no), porque esa
+  partida no se guarda.
+- **P** pausa y reanuda. La partida también se pausa sola si se minimiza la ventana o se cambia a
+  otro programa.
+
+### Se usa como cualquier programa
+
+- **Todo se puede hacer con el mouse.** Cada tecla que aparece dibujada en pantalla es también un
+  botón: se ilumina al pasar el mouse por encima (y el puntero se vuelve una manito) y un clic hace
+  lo mismo que apretarla. Los paneles de los modos, las piedras de la paleta y las cajas de los
+  nombres también se clickean. En la intro y el tutorial, un clic en cualquier lado sigue adelante.
+- **ENTER confirma y ESC vuelve**, en todas las pantallas.
+- **Cmd+Q** (Mac) o **Ctrl+Q** (Windows/Linux) cierran el juego, igual que la X de la ventana.
 
 ### Modo 1 jugador: superar el récord
 
@@ -174,7 +186,9 @@ borrar ese archivo.
 |-----------------|------------------------------------------------------------|
 | 1               | Empezar en modo 1 jugador                                  |
 | 2               | Empezar en modo versus                                     |
-| ESPACIO         | Volver a jugar el mismo modo                               |
+| ESPACIO / ENTER | Volver a jugar el mismo modo                               |
+| P               | Pausar / seguir la partida                                 |
+| S / N           | Al abandonar una partida: sí / no                          |
 | + / -           | Subir / bajar el umbral de brillo de la detección          |
 | M               | Mostrar / ocultar lo que la cámara está tomando como "luz" |
 | C               | Paleta de colores de la luz (en la partida: color siguiente) |
@@ -184,7 +198,8 @@ borrar ese archivo.
 | ESPACIO         | En la intro y el tutorial: saltearlos                      |
 | ESC             | Volver a la pantalla de inicio (en la pantalla de inicio: salir) |
 | Botón INICIO    | Volver a la pantalla de inicio con un clic (arriba a la izquierda) |
-| La X            | Cerrar el juego                                            |
+| La X / Cmd+Q / Ctrl+Q | Cerrar el juego                                      |
+| Mouse           | Clic en cualquier tecla dibujada hace lo mismo que apretarla |
 
 Si el juego detecta otras cosas como si fueran la linterna (lámparas, ventanas, la pantalla),
 hay que subir el umbral con **+**. Si no detecta la linterna, hay que bajarlo con **-**.

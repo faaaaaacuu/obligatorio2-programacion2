@@ -349,6 +349,26 @@ def dibujar_espada(capa_suave, capa_nitida, puntos, color, luz):
 # Pantalla e interfaz
 # ---------------------------------------------------------------------------
 
+# Zonas de la pantalla que se pueden clickear: cada tecla dibujada es también un botón,
+# como en cualquier programa. Es una lista de (rectángulo, tecla). Se vacía al empezar
+# a dibujar cada cuadro y se va llenando mientras se dibuja; main.py la usa al hacer clic.
+zonas_clic = []
+
+
+def registrar_zona(rect, etiqueta):
+    """Anota que hacer clic en `rect` es lo mismo que apretar la tecla `etiqueta`."""
+    zonas_clic.append((pygame.Rect(rect), etiqueta))
+
+
+def tecla_en(posicion):
+    """Devuelve la tecla del botón que está en `posicion`, o None si no hay ninguno.
+    Se recorre de atrás para adelante: gana lo que se dibujó último (lo de arriba)."""
+    for rect, etiqueta in reversed(zonas_clic):
+        if rect.collidepoint(posicion):
+            return etiqueta
+    return None
+
+
 def ancho_tecla(fuente, letra, alto):
     """Devuelve el ancho de una tecla dibujada: cuadrada si es una letra, más
     larga si dice una palabra (ESC, ESPACIO, ENTER)."""
@@ -393,11 +413,22 @@ def dibujar_atajos(pantalla, atajos, fuente_texto, fuente_tecla, alto, color_tex
     x, y = posicion
     if centrado:
         x -= medir_atajos(atajos, fuente_texto, fuente_tecla, alto) // 2
+    raton = pygame.mouse.get_pos()
     for teclas, texto in atajos:
+        # todo el atajo (teclas y texto) es un botón: se ilumina con el mouse encima
+        ancho = medir_atajos([(teclas, texto)], fuente_texto, fuente_tecla, alto)
+        zona = pygame.Rect(int(x) - 4, y - alto // 2 - 4, ancho + 8, alto + 8)
+        encima = zona.collidepoint(raton)
+        registrar_zona(zona, teclas[0])
+        tono_tecla = mezclar(color_tecla, BLANCO, 0.45) if encima else color_tecla
         for letra in teclas:
-            x += dibujar_tecla_chica(pantalla, fuente_tecla, letra, x, y - alto // 2 - 1, alto,
-                                     color_tecla) + ESPACIO_TECLA
-        dibujar_texto(pantalla, texto, fuente_texto, color_texto,
+            ancho_letra = dibujar_tecla_chica(pantalla, fuente_tecla, letra, x, y - alto // 2 - 1, alto,
+                                              tono_tecla)
+            if len(teclas) > 1:
+                # si hay varias teclas (+ y -), cada una es su propio botón
+                registrar_zona((int(x), y - alto // 2 - 1, ancho_letra, alto), letra)
+            x += ancho_letra + ESPACIO_TECLA
+        dibujar_texto(pantalla, texto, fuente_texto, BLANCO if encima else color_texto,
                       (x, y - fuente_texto.get_height() // 2), False)
         x += fuente_texto.size(texto)[0] + SEPARACION_ATAJOS
 
