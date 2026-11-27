@@ -374,7 +374,7 @@ def dibujar_nombres(pantalla, fuentes, nombres, cual, tiempo):
     for i, (titulo, color, x) in enumerate(lados):
         activo = i == cual
         dibujar_texto(pantalla, titulo, fuentes["media"], color, (x, 225))
-        caja = pygame.Rect(0, 0, 360, 64)
+        caja = pygame.Rect((0, 0), CAJA_NOMBRE)
         caja.center = (x, 285)
         pygame.draw.rect(pantalla, LACA, caja, border_radius=4)
         pygame.draw.rect(pantalla, color if activo else GRIS, caja, 3 if activo else 1, border_radius=4)
@@ -517,17 +517,18 @@ def main():
     datos = resultados.cargar_resultados()
     fondo = graficos.crear_fondo(ANCHO, ALTO, COLOR_FONDO, OSCURIDAD_CENTRO, OSCURIDAD_BORDE)
     capa_cartel = crear_capa(CAPA_CARTEL)
-    destello = crear_capa((255, 30, 30, 110))
+    destello = crear_capa(COLOR_DESTELLO_BOMBA)
     # Las espadas de luz se dibujan en dos capas que después se suman a la pantalla:
     # una chica para el resplandor (se agranda y queda borrosa) y una nítida.
     capa_suave = pygame.Surface((ANCHO // 4, ALTO // 4))
     capa_nitida = pygame.Surface((ANCHO, ALTO))
-    iconos_vida = {True: graficos.crear_vida(26, True), False: graficos.crear_vida(26, False)}
+    iconos_vida = {True: graficos.crear_vida(TAMANIO_VIDA, True),
+                   False: graficos.crear_vida(TAMANIO_VIDA, False)}
     imagenes_inicio = inicio.crear_imagenes(fuentes)     # para las animaciones de la pantalla de inicio
     paneles = {
-        "puntos": graficos.crear_panel(200, 104),
-        "vidas": graficos.crear_panel(160, 64),
-        "versus": graficos.crear_panel(MITAD - 24, 112),
+        "puntos": graficos.crear_panel(*PANEL_PUNTOS),
+        "vidas": graficos.crear_panel(*PANEL_VIDAS),
+        "versus": graficos.crear_panel(MITAD - MARGEN_PANEL_VERSUS, ALTO_PANEL_VERSUS),
     }
 
     # Estados: "intro" -> "menu" -> "cartel" (cuenta regresiva) -> "jugando" -> "perdiste"
@@ -668,7 +669,7 @@ def main():
                     for corrida, color in ((-3, COLOR_JUGADOR_1), (3, COLOR_JUGADOR_2), (0, BLANCO)):
                         pygame.draw.line(capa_nitida, graficos.mezclar(NEGRO, color, 0.6),
                                          (MITAD + corrida, 0), (MITAD + corrida, ALTO), 3)
-                    pygame.draw.line(capa_suave, (60, 60, 80), (MITAD // 4, 0), (MITAD // 4, ALTO // 4), 3)
+                    pygame.draw.line(capa_suave, COLOR_DIVISION_VERSUS, (MITAD // 4, 0), (MITAD // 4, ALTO // 4), 3)
             elif estado == "menu":
                 for luz in luces:   # en el menú se ve dónde está cada luz
                     graficos.dibujar_espada(capa_suave, capa_nitida, [], COLORES_ESPADA[indice_color][1], luz)
@@ -699,7 +700,7 @@ def main():
                 pantalla.blit(a_superficie(chica), (ANCHO - ANCHO // 4 - 10, ALTO - ALTO // 4 - 10))
 
         pygame.display.flip()
-        dt = min(reloj.tick(FPS) / 1000, 0.1)  # tope por si un cuadro tarda mucho
+        dt = min(reloj.tick(FPS) / 1000, DT_MAXIMO)  # tope por si un cuadro tarda mucho
 
     # Al cerrar la ventana se libera la cámara.
     cap.release()

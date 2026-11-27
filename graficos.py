@@ -18,6 +18,8 @@ import pygame
 from ajustes import (BLANCO, NEGRO, CONTORNO, MARRON, VERDE_HOJA, GRIS, ROJO, AMARILLO,
                      LACA, MADERA, MADERA_CLARA, ROJO_FAROL, SHOJI_COLUMNAS, SHOJI_FILAS,
                      OPACIDAD_SHOJI, GROSOR_RASTRO)
+from ajustes import (CORTEZA_SANDIA, COLOR_BOMBA, COLOR_CUERPO_MORTAL, COLOR_MECHA,
+                     COLOR_CRUZ_BOMBA, CHISPA_MECHA, COLOR_VIDA_VACIA, LUZ_VELA, COLOR_FONDO_BARRA)
 
 S = 2   # las imágenes se dibujan S veces más grandes y después se achican
 
@@ -179,7 +181,7 @@ def crear_imagen_corte(tipo, radio):
     nombre = tipo["tipo"]
     pulpa = tipo["pulpa"]
     azar = random.Random(radio + 1)
-    corteza = (235, 245, 205) if nombre == "sandia" else mezclar(pulpa, BLANCO, 0.5)
+    corteza = CORTEZA_SANDIA if nombre == "sandia" else mezclar(pulpa, BLANCO, 0.5)
 
     pygame.draw.circle(sup, CONTORNO, (cx, cy), r + 3 * S)
     pygame.draw.circle(sup, tipo["color"], (cx, cy), r)       # cáscara
@@ -242,14 +244,14 @@ def crear_imagen_bomba(radio, mortal=False):
     """Devuelve la imagen de una bomba. La mortal es violeta y tiene una calavera."""
     sup, (cx, cy) = superficie_para(radio * S)
     r = radio * S
-    color = (110, 30, 170) if mortal else (55, 55, 70)
+    color = COLOR_CUERPO_MORTAL if mortal else COLOR_BOMBA
 
     # mecha (una curvita) y la tapita de metal
     mx, my = punta_de_mecha(r)
     puntos = [(cx, cy - r * 0.95), (cx + r * 0.1, cy - r * 1.15),
               (cx + r * 0.3, cy - r * 1.1), (cx + mx, cy + my)]
     pygame.draw.lines(sup, CONTORNO, False, puntos, 7 * S)
-    pygame.draw.lines(sup, (200, 170, 120), False, puntos, 3 * S)
+    pygame.draw.lines(sup, COLOR_MECHA, False, puntos, 3 * S)
     tapa = pygame.Rect(0, 0, int(r * 0.5), int(r * 0.3))
     tapa.center = (cx, int(cy - r * 0.92))
     pygame.draw.rect(sup, CONTORNO, tapa.inflate(4 * S, 4 * S), border_radius=4 * S)
@@ -276,13 +278,13 @@ def crear_imagen_bomba(radio, mortal=False):
         # una X roja de advertencia
         x = r * 0.3
         for a, b in (((-x, -x), (x, x)), ((x, -x), (-x, x))):
-            pygame.draw.line(sup, (230, 40, 40), (cx + a[0], cy + a[1]), (cx + b[0], cy + b[1]), 6 * S)
+            pygame.draw.line(sup, COLOR_CRUZ_BOMBA, (cx + a[0], cy + a[1]), (cx + b[0], cy + b[1]), 6 * S)
     return achicar(sup)
 
 
 def dibujar_chispa(pantalla, x, y):
     """La chispa de la mecha: cambia de tamaño cada cuadro, así titila."""
-    for color, tam in (((255, 120, 0), 9), ((255, 230, 60), 6), (BLANCO, 3)):
+    for color, tam in CHISPA_MECHA:
         pygame.draw.circle(pantalla, color, (int(x), int(y)), tam + random.randint(-2, 2))
 
 
@@ -419,7 +421,7 @@ def crear_vida(tam, llena):
         pygame.draw.circle(sup, mezclar(ROJO, BLANCO, 0.35), centro, r * 0.62, max(1, int(1.3 * S)))
         pygame.draw.circle(sup, mezclar(ROJO, BLANCO, 0.6), (centro[0] - r * 0.4, centro[1] - r * 0.4), r * 0.16)
     else:
-        pygame.draw.circle(sup, (36, 30, 32), centro, r)
+        pygame.draw.circle(sup, COLOR_VIDA_VACIA, centro, r)
         pygame.draw.circle(sup, GRIS, centro, r, S)
     return achicar(sup)
 
@@ -453,7 +455,7 @@ def crear_farol(alto):
     ovalo_con_volumen(sup, cuerpo.center, cuerpo.width, cuerpo.height, ROJO_FAROL)
     # adentro hay una vela: el centro brilla más
     ovalo_con_volumen(sup, cuerpo.center, cuerpo.width * 0.55, cuerpo.height * 0.6,
-                      mezclar(ROJO_FAROL, (255, 190, 120), 0.6), 8)
+                      mezclar(ROJO_FAROL, LUZ_VELA, 0.6), 8)
     # las costillas de bambú del farol
     for k in range(1, 6):
         y = cuerpo.top + cuerpo.height * k / 6
@@ -500,7 +502,7 @@ def dibujar_farol(pantalla, farol, halo, x, largo_cuerda, tiempo, fase=0.0):
 
 def dibujar_barra(pantalla, rect, fraccion, color):
     """Barra de progreso: se llena según `fraccion` (de 0 a 1)."""
-    pygame.draw.rect(pantalla, (20, 20, 35), rect, border_radius=rect.height // 2)
+    pygame.draw.rect(pantalla, COLOR_FONDO_BARRA, rect, border_radius=rect.height // 2)
     if fraccion > 0:
         lleno = rect.copy()
         lleno.width = max(rect.height, int(rect.width * min(1, fraccion)))

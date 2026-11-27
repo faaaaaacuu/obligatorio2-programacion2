@@ -20,10 +20,11 @@ from ajustes import (ANCHO, ALTO, TARJETA_ANCHO, TARJETA_ALTO, TARJETA_ANIMACION
                      FRUTAS_JUGADOR_1, FRUTAS_JUGADOR_2, COLORES_ESPADA, COLOR_JUGADOR_1,
                      COLOR_JUGADOR_2, COLOR_BOMBA_MORTAL, BLANCO, NEGRO, AMARILLO, VERDE,
                      ROJO, GRIS, CONTORNO, DESENFOQUE_BRILLO, COLORES_INTRO, KANJI, ARCHIVO_FUENTE_TEXTO, LUZ_FAROL)
+from ajustes import (COLORES_EXPLOSION, COLOR_DESTELLO_TARJETA, COLOR_DESTELLO_INTRO,
+                     TAMANIO_VIDA_TARJETA, PANEL_MODO, ESPADAZOS, APARECE_TITULO, SELLO_INTRO)
 
 LUZ = COLORES_ESPADA[0][1]      # color de la luz en las animaciones
 CARPETA = os.path.dirname(os.path.abspath(__file__))
-COLORES_EXPLOSION = [(255, 140, 30), (255, 220, 60), (255, 255, 255), (90, 90, 90)]
 
 
 # ---------------------------------------------------------------------------
@@ -43,14 +44,15 @@ def crear_imagenes(fuentes):
     imagenes["bomba"] = graficos.crear_imagen_bomba(r)
     imagenes["mortal"] = graficos.crear_imagen_bomba(r, mortal=True)
     imagenes["halo"] = graficos.crear_halo(r * 2, COLOR_BOMBA_MORTAL)
-    imagenes["vidas"] = {True: graficos.crear_vida(16, True), False: graficos.crear_vida(16, False)}
+    imagenes["vidas"] = {True: graficos.crear_vida(TAMANIO_VIDA_TARJETA, True),
+                        False: graficos.crear_vida(TAMANIO_VIDA_TARJETA, False)}
     rojo = pygame.Surface((TARJETA_ANCHO, TARJETA_ANIMACION_ALTO), pygame.SRCALPHA)
-    rojo.fill((255, 40, 40, 255))
+    rojo.fill(COLOR_DESTELLO_TARJETA)
     imagenes["rojo"] = rojo
     imagenes["tarjeta"] = graficos.crear_panel(TARJETA_ANCHO, TARJETA_ALTO)
-    imagenes["modo"] = graficos.crear_panel(340, 74)
+    imagenes["modo"] = graficos.crear_panel(*PANEL_MODO)
     blanco = pygame.Surface((ANCHO, ALTO), pygame.SRCALPHA)
-    blanco.fill((255, 255, 255, 255))
+    blanco.fill(COLOR_DESTELLO_INTRO)
     imagenes["blanco"] = blanco               # para el destello de la intro
     # estética de dojo: sello rojo con el kanji 光 ("luz") y faroles de papel.
     # (crear_sello devuelve None si la compu no tiene una fuente con ese kanji)
@@ -414,16 +416,8 @@ def dibujar_inicio(pantalla, fuentes, imagenes, tiempo, hay_luz, color, record, 
 # Intro: lo primero que se ve al abrir el juego
 # ---------------------------------------------------------------------------
 
-# Los dos espadazos: (desde, hasta, segundo en que empieza, segundo en que termina, color).
-# Cruzan la pantalla en diagonal y forman una X.
-ESPADAZOS = [
-    ((-60, 40), (ANCHO + 60, ALTO - 70), 0.45, 0.75, COLORES_INTRO[0]),
-    ((ANCHO + 60, 50), (-60, ALTO - 50), 1.05, 1.35, COLORES_INTRO[1]),
-]
-APARECE_TITULO = 1.6        # segundo en que aparece el título (después del segundo espadazo)
-
+# Los espadazos, el título y el sello de la intro tienen sus tiempos en ajustes.py.
 # Sonidos de la intro: (segundo en que suena, nombre del sonido)
-SELLO_INTRO = APARECE_TITULO + 0.75   # segundo en que se "estampa" el sello rojo
 SONIDOS_INTRO = [(ESPADAZOS[0][2], "espadazo"), (ESPADAZOS[1][2], "espadazo"),
                  (APARECE_TITULO, "nivel"), (SELLO_INTRO, "sello")]
 

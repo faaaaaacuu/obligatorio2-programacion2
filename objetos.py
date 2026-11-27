@@ -19,9 +19,10 @@ from ajustes import (ALTO, REBOTE_EN_EL_BORDE, ALTURA_MINIMA, ALTURA_MAXIMA, VEL
                      GOTAS_POR_CORTE, CHISPAS_POR_BOMBA, GRAVEDAD_PARTICULAS,
                      FRUTAS_PARA_VIDA, GIRO_MAXIMO_TRAZO,
                      BLANCO, NEGRO, ROJO, VERDE)
-
-COLORES_EXPLOSION = [(255, 140, 30), (255, 220, 60), (255, 255, 255), (90, 90, 90)]
-COLORES_EXPLOSION_MORTAL = [COLOR_BOMBA_MORTAL, (230, 160, 255), (255, 255, 255)]
+from ajustes import (COLORES_EXPLOSION, COLORES_EXPLOSION_MORTAL, CHISPAS_AL_TIRAR_MORTAL,
+                     VELOCIDAD_JUGO, RADIO_JUGO, VELOCIDAD_CHISPAS, RADIO_CHISPAS,
+                     VELOCIDAD_CHISPAS_MORTAL, RADIO_CHISPAS_MORTAL,
+                     VELOCIDAD_CHISPAS_TIRAR, RADIO_CHISPAS_TIRAR)
 
 
 def distancia_punto_segmento(punto, inicio, fin):
@@ -169,11 +170,11 @@ class Fruta:
         """Devuelve las partículas de la explosión (bomba) o del jugo (fruta)."""
         if self.mortal:
             return salpicar(self.x, self.y, COLORES_EXPLOSION_MORTAL, CHISPAS_POR_BOMBA * 2,
-                            (100, 500), (4, 10))
+                            VELOCIDAD_CHISPAS_MORTAL, RADIO_CHISPAS_MORTAL)
         if self.bomba:
-            return salpicar(self.x, self.y, COLORES_EXPLOSION, CHISPAS_POR_BOMBA, (100, 420), (3, 9))
+            return salpicar(self.x, self.y, COLORES_EXPLOSION, CHISPAS_POR_BOMBA, VELOCIDAD_CHISPAS, RADIO_CHISPAS)
         colores = [self.tipo["pulpa"], self.tipo["color"]]
-        return salpicar(self.x, self.y, colores, GOTAS_POR_CORTE, (80, 280), (3, 7))
+        return salpicar(self.x, self.y, colores, GOTAS_POR_CORTE, VELOCIDAD_JUGO, RADIO_JUGO)
 
     def dibujar(self, pantalla):
         pegar_centrado(pantalla, self.imagen, self.x, self.y, self.angulo)
@@ -419,7 +420,8 @@ class Jugador:
         self.bomba_usada = True
         self.vidas = min(self.vidas, VIDAS_AL_TIRAR_BOMBA)   # tirarla te deja con 1 vida
         self.particulas.extend(salpicar(self.centro_carga[0], self.centro_carga[1],
-                                        COLORES_EXPLOSION_MORTAL, 25, (100, 350), (3, 8)))
+                                        COLORES_EXPLOSION_MORTAL, CHISPAS_AL_TIRAR_MORTAL,
+                                        VELOCIDAD_CHISPAS_TIRAR, RADIO_CHISPAS_TIRAR))
         self.camino = []
         self.carga = 0.0
         self.mostrar_mensaje("¡BOMBA LANZADA!")

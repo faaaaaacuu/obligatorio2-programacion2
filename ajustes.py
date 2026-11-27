@@ -73,6 +73,23 @@ SHOJI_COLUMNAS = 8
 SHOJI_FILAS = 5
 OPACIDAD_SHOJI = 45                  # 0-255: qué tan marcada se ve la reja (poco, para no molestar)
 COLOR_BOMBA_MORTAL = (180, 70, 255)  # violeta
+# Partículas: chispas de las bombas y de la bomba mortal
+COLORES_EXPLOSION = [(255, 140, 30), (255, 220, 60), (255, 255, 255), (90, 90, 90)]
+COLORES_EXPLOSION_MORTAL = [COLOR_BOMBA_MORTAL, (230, 160, 255), (255, 255, 255)]
+COLOR_DESTELLO_BOMBA = (255, 30, 30, 110)   # capa roja (con transparencia) al cortar una bomba
+COLOR_DIVISION_VERSUS = (60, 60, 80)        # resplandor de la línea que divide las mitades
+COLOR_DESTELLO_TARJETA = (255, 40, 40, 255) # destello rojo en la tarjeta de la bomba
+COLOR_DESTELLO_INTRO = (255, 255, 255, 255) # destello blanco de la intro
+# Colores de los dibujos (graficos.py)
+CORTEZA_SANDIA = (235, 245, 205)     # la parte blanca entre la cáscara y la pulpa
+COLOR_BOMBA = (55, 55, 70)           # hierro de la bomba
+COLOR_CUERPO_MORTAL = (110, 30, 170) # cuerpo de la bomba mortal
+COLOR_MECHA = (200, 170, 120)
+COLOR_CRUZ_BOMBA = (230, 40, 40)     # la X roja de advertencia
+CHISPA_MECHA = (((255, 120, 0), 9), ((255, 230, 60), 6), (BLANCO, 3))   # (color, tamaño) de cada capa
+COLOR_VIDA_VACIA = (36, 30, 32)      # sello de una vida perdida
+LUZ_VELA = (255, 190, 120)           # el centro de los faroles
+COLOR_FONDO_BARRA = (20, 20, 35)     # fondo de las barras de progreso
 
 # Cada jugador tiene sus propias frutas, así en el versus se distinguen de un vistazo.
 #   tipo:  cómo se dibuja
@@ -107,6 +124,16 @@ SEPARACION_PEDAZOS = 130   # velocidad con la que se separan las dos mitades al 
 # --- Partículas (jugo y explosiones) ---
 GOTAS_POR_CORTE = 14
 CHISPAS_POR_BOMBA = 30
+CHISPAS_AL_TIRAR_MORTAL = 25
+# velocidad (mín, máx) en píxeles por segundo y radio (mín, máx) de cada partícula
+VELOCIDAD_JUGO = (80, 280)
+RADIO_JUGO = (3, 7)
+VELOCIDAD_CHISPAS = (100, 420)
+RADIO_CHISPAS = (3, 9)
+VELOCIDAD_CHISPAS_MORTAL = (100, 500)
+RADIO_CHISPAS_MORTAL = (4, 10)
+VELOCIDAD_CHISPAS_TIRAR = (100, 350)
+RADIO_CHISPAS_TIRAR = (3, 8)
 GRAVEDAD_PARTICULAS = 700
 DURACION_TEXTO_FLOTANTE = 0.7   # segundos que se ve el "+1" que sube desde la fruta
 DESENFOQUE_BRILLO = 3      # cuánto se difumina el resplandor de la espada de luz
@@ -121,12 +148,31 @@ NIVEL_MINIMO_MUSICA = [0, 2, 4, 7]   # desde qué nivel de dificultad suena cada
 VOLUMEN_MUSICA = 0.35      # de 0 a 1: más baja que los efectos, para que no tape los cortes
 FUNDIDO_MUSICA_MS = 1500   # milisegundos que tarda en pasar de una versión a otra
 
+# --- Tamaños de los paneles y los íconos (ancho, alto en píxeles) ---
+TAMANIO_VIDA = 26                    # sello de cada vida en la partida
+TAMANIO_VIDA_TARJETA = 16            # sello de las vidas en las tarjetas de inicio
+PANEL_PUNTOS = (200, 104)
+PANEL_VIDAS = (160, 64)
+ALTO_PANEL_VERSUS = 112              # el ancho es media pantalla menos un margen
+MARGEN_PANEL_VERSUS = 24
+PANEL_MODO = (340, 74)               # "1 jugador" / "versus" en la pantalla de inicio
+CAJA_NOMBRE = (360, 64)              # donde se escribe cada nombre del versus
+DT_MAXIMO = 0.1                      # segundos: tope del paso de tiempo si un cuadro tarda mucho
+
 # --- Botón para volver a la pantalla de inicio (también con ESC) ---
 BOTON_INICIO = (90, 14, 150, 40)     # x, y, ancho, alto (arriba a la izquierda, al lado del farol)
 
 # --- Intro (lo primero que se ve al abrir el juego) ---
 DURACION_INTRO = 5.0       # segundos hasta que pasa sola a la pantalla de inicio
 COLORES_INTRO = [(240, 195, 90), (240, 70, 50)]   # color de cada espadazo: oro y bermellón
+# Los dos espadazos: (desde, hasta, segundo en que empieza, segundo en que termina, color).
+# Cruzan la pantalla en diagonal y forman una X.
+ESPADAZOS = [
+    ((-60, 40), (ANCHO + 60, ALTO - 70), 0.45, 0.75, COLORES_INTRO[0]),
+    ((ANCHO + 60, 50), (-60, ALTO - 50), 1.05, 1.35, COLORES_INTRO[1]),
+]
+APARECE_TITULO = 1.6                  # segundo en que aparece el título (después del segundo espadazo)
+SELLO_INTRO = APARECE_TITULO + 0.75   # segundo en que se "estampa" el sello rojo
 
 # --- Pantalla de inicio: tarjetas con las reglas y su animación ---
 TARJETA_ANCHO = 172
